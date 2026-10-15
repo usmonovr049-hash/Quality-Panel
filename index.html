@@ -104,9 +104,7 @@ button.primary{background:var(--brand);border-color:var(--brand);color:#fff}
 .kpi:nth-child(1){background:#e8f0fc}.kpi:nth-child(1) .v{color:#1f5fb5}
 .kpi:nth-child(2){background:#fdeee6}.kpi:nth-child(2) .v{color:#b84a1d}
 .kpi:nth-child(3){background:#eeebfb}.kpi:nth-child(3) .v{color:#4a3bb5}
-.kpi:nth-child(4){background:#fceaf1}.kpi:nth-child(4) .v{color:#b23a68}
-.kpi:nth-child(5){background:#fdf4dc}.kpi:nth-child(5) .v{color:#8a5f00}
-.kpi:nth-child(6){background:#e5f6ef}.kpi:nth-child(6) .v{color:#157a55}
+.kpi:nth-child(4){background:#e5f6ef}.kpi:nth-child(4) .v{color:#157a55}
 .kpi .l{color:#4a5866}
 .hb .tr i{background:var(--brand)}
 .drop{background:var(--brand-soft);border-color:#b9c0ea}
@@ -126,7 +124,7 @@ html{-webkit-text-size-adjust:100%}
 <header>
   <div>
     <div class="brand"><img src="logo.png" alt="Uz Koram Ko logotipi" width="56" height="48"><div><div class="wm">Uz Koram Ko MCHJ QK</div><h1>Xaridor Sifat Paneli</h1></div></div>
-    <div class="sub">GCA · DRR · DRL · Line Stop — Uz Koram ta'minoti, kunlik hisobotlar asosida</div>
+    <div class="sub">GCA · DRR — Uz Koram ta'minoti, xaridor hisobotlari asosida</div>
   </div>
   <div class="tools">
     <div class="month"><button id="prev" aria-label="Oldingi oy">‹</button><b id="mlabel"></b><button id="next" aria-label="Keyingi oy">›</button></div>
@@ -138,7 +136,7 @@ html{-webkit-text-size-adjust:100%}
 </header>
 
 <div class="drop" id="drop">
-  <span>Har kungi Daily_report faylini (.xlsx) shu yerga tashlang yoki «Hisobot yuklash»ni bosing. Bir nechta faylni birdan yuklash mumkin. Bir sanaga ikkinchi marta yuklansa, eskisi almashadi.</span>
+  <span>Kunlik yoki oylik hisobot faylini (.xlsx) shu yerga tashlang yoki «Hisobot yuklash»ni bosing. Fayldagi har bir sana alohida kun bo'lib saqlanadi. Bir sanaga ikkinchi marta yuklansa, eskisi almashadi.</span>
   <div class="msgs" id="msgs" aria-live="polite"></div>
 </div>
 <div class="banner" id="banner" hidden></div>
@@ -154,11 +152,11 @@ html{-webkit-text-size-adjust:100%}
 <div class="grid">
   <section class="card"><h2>GCA ballari — kunlar bo'yicha</h2><div class="hint">Nuqson og'irliklari yig'indisi. Kunni tanlash uchun ustunni bosing.</div>
     <div class="legend" id="lg1"></div><div class="chart" id="ch1"></div></section>
-  <section class="card"><h2>DRR va DRL — kunlar bo'yicha</h2><div class="hint">Qayd etilgan holatlar soni (QTY).</div>
+  <section class="card"><h2>DRR — kunlar bo'yicha</h2><div class="hint">Modellar bo'yicha, soni (QTY).</div>
     <div class="legend" id="lg2"></div><div class="chart" id="ch2"></div></section>
   <section class="card"><h2>Eng ko'p ball bergan nuqson turlari</h2><div class="hint">GCA, tanlangan davr bo'yicha</div><div class="hb" id="hb1"></div></section>
   <section class="card"><h2>Eng ko'p ball bergan detallar</h2><div class="hint">GCA, tanlangan davr bo'yicha</div><div class="hb" id="hb2"></div></section>
-  <section class="card"><h2>Line Stop — daqiqa</h2><div class="hint">To'xtab qolgan vaqt, kunlar bo'yicha</div><div class="chart" id="ch3"></div></section>
+  <section class="card"><h2>DRR — nuqson turlari</h2><div class="hint">Soni (QTY), tanlangan davr bo'yicha</div><div class="hb" id="hb3"></div></section>
   <section class="card"><h2>Smena bo'yicha</h2><div class="hint">GCA ballari va DRR/DRL soni</div><div class="tw" id="shift"></div></section>
 </div>
 
@@ -195,6 +193,8 @@ html{-webkit-text-size-adjust:100%}
 <script>
 const MODELS=['Onix','Cobalt','Tracker'];
 const MC={Onix:'var(--c-onix)',Cobalt:'var(--c-cobalt)',Tracker:'var(--c-tracker)'};
+const mc=m=>MC[m]||'var(--c-ls)';
+const allM=()=>[...MODELS,...[...new Set(Object.values(days).flatMap(d=>[...d.g,...d.r].map(x=>x.m)))].filter(m=>m&&m!=='—'&&!MODELS.includes(m)).sort()];
 const MN=['Yanvar','Fevral','Mart','Aprel','May','Iyun','Iyul','Avgust','Sentyabr','Oktyabr','Noyabr','Dekabr'];
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -207,18 +207,21 @@ function iso(v){
   if(typeof v==='number'&&v>30000&&v<80000) return new Date(Math.round((v-25569)*86400e3)).toISOString().slice(0,10);
   return null;
 }
-const HK={fault:'f',weight:'w','gca weight':'w',models:'models',model:'models',minutes:'min',minute:'min',min:'min',supplier:'sup',zone:'zone',open:'date',data:'date',date:'date',qty:'q',quantity:'q',pono:'po',shift:'sh'};
-const DEF={g:{f:5,w:6,sup:8,zone:10,date:11,po:12,sh:13},l:{models:5,min:6,sup:8,zone:10,date:11,sh:13},r:{f:5,models:6,sup:8,zone:10,date:11,q:12,sh:13},dl:{f:5,models:6,sup:8,zone:10,date:11,q:12,sh:13}};
+const HK={fault:'f',weight:'w','gca weight':'w',models:'models',model:'models',supplier:'sup',zone:'zone',open:'date',data:'date',date:'date',qty:'q',quantity:'q',pono:'po',shift:'sh'};
+/* sarlavha bo'lmasa: ustunlar sana ustuniga nisbatan topiladi */
+const REL={g:{f:-6,w:-5,po:1,sh:2},r:{f:-6,models:-5,q:1,sh:2}};
 const canon=v=>{const t=String(v??'').trim();return MODELS.find(m=>m.toLowerCase()===t.toLowerCase())||t||'—'};
 const norm=v=>String(v??'').toLowerCase().replace(/[^a-z]/g,'');
 function readHeader(r){
   const h={};let hits=0;
   r.forEach((v,i)=>{if(typeof v!=='string')return;const k=HK[v.trim().toLowerCase()];if(k&&h[k]==null){h[k]=i;hits++}});
-  const first=typeof r.find(v=>v!=null&&v!=='')==='string'&&/issues?\s*description/i.test(String(r.find(v=>v!=null&&v!=='')));
-  return (hits>=2||first)&&hits>=1?h:null;
+  const first=r.find(v=>v!=null&&v!=='');
+  const isIssues=typeof first==='string'&&/issues?\s*description/i.test(first);
+  return (hits>=2||isIssues)&&hits>=1?h:null;
 }
-function parseSheet(rows,ctx){
-  const out=ctx.out; let sec='g', model=null, hdr=null;
+function parseSheet(rows,ctx,sheetName){
+  let sec='g', hdr=null;
+  let model=MODELS.find(m=>m.toLowerCase()===String(sheetName).trim().toLowerCase())||null;
   const num=v=>{const n=parseFloat(String(v).replace(',','.'));return isFinite(n)?n:0};
   for(const r of rows){
     if(!r||r.every(v=>v==null||v==='')) continue;
@@ -226,41 +229,49 @@ function parseSheet(rows,ctx){
     if(filled.length===1&&typeof filled[0]==='string'){
       const t=norm(filled[0]);
       const mm=MODELS.find(m=>m.toLowerCase()===t);
-      if(mm){model=mm;sec='g'}
-      else if(t==='linestop'||t==='linestops'){sec='l';hdr=null}
+      if(mm){model=mm;sec='g';hdr=null}
       else if(t==='drr'){sec='r';hdr=null}
-      else if(t==='drl'){sec='dl';hdr=null}
+      else if(t==='linestop'||t==='linestops'||t==='drl'){sec='skip';hdr=null}
       continue;
     }
     const h=readHeader(r); if(h){hdr=h;continue}
-    const H=hdr||DEF[sec];
+    if(sec==='skip') continue;
+    let H=hdr;
+    if(!H){
+      let di=r.findIndex(v=>v instanceof Date); if(di<0) di=r.findIndex(v=>iso(v));
+      if(di<0) continue;
+      H={date:di}; for(const [k,o] of Object.entries(REL[sec])) H[k]=di+o;
+    }
     const get=k=>H[k]!=null?r[H[k]]:null;
     const firstCol=Math.min(...Object.values(H));
     const dt=iso(get('date')); if(dt)ctx.dc[dt]=(ctx.dc[dt]||0)+1;
     const desc=r.slice(0,firstCol).filter(v=>v!=null&&v!=='').join(' › '); if(!desc) continue;
-    const sh=String(get('sh')||'').trim();
-    const idx=H.f??0, f=String(get('f')||'');
+    const sh=String(get('sh')||'').trim(), f=String(get('f')||'');
     if(sec==='g'){
       if(!get('f')&&!get('w'))continue;
-      const mdl=model||(get('models')?canon(get('models')):'—');
-      out.g.push({m:mdl,a:String(r[0]||''),p:String(r[1]||''),d:desc,f,w:num(get('w')),po:String(get('po')||''),sh});
-    }else if(sec==='l'){
-      out.l.push({m:canon(get('models')),d:desc,f,min:num(get('min')),sh});
+      const first=r.slice(0,firstCol).filter(v=>v!=null&&v!=='');
+      ctx.out.g.push({dt,m:model||(get('models')?canon(get('models')):'—'),a:String(first[0]||''),p:String(first[1]||''),d:desc,f,w:num(get('w')),po:String(get('po')||''),sh});
     }else{
-      out[sec].push({m:canon(get('models')),d:desc,f,q:num(get('q'))||1,sh});
+      ctx.out.r.push({dt,m:canon(get('models')),d:desc,f,q:num(get('q'))||1,sh});
     }
   }
 }
 function parseWorkbook(wb,fname){
-  const ctx={out:{g:[],l:[],r:[],dl:[]},dc:{}};
+  const ctx={out:{g:[],r:[]},dc:{}};
   for(const n of wb.SheetNames){
-    parseSheet(XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:null,raw:true}),ctx);
+    parseSheet(XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:null,raw:true}),ctx,n);
   }
-  let date=Object.entries(ctx.dc).sort((x,y)=>y[1]-x[1])[0]?.[0];
-  if(!date){const m=/(\d{2})[._-](\d{2})[._-](\d{4})/.exec(fname);if(m)date=`${m[3]}-${m[2]}-${m[1]}`}
-  if(!date) throw new Error('sana topilmadi (fayl nomida kk.oo.yyyy bo\'lsin)');
-  const o=ctx.out; if(!o.g.length&&!o.l.length&&!o.r.length&&!o.dl.length) throw new Error("hech qanday qator topilmadi");
-  return {date,name:fname,...o};
+  let mode=Object.entries(ctx.dc).sort((x,y)=>y[1]-x[1])[0]?.[0];
+  if(!mode){const m=/(\d{2})[._-](\d{2})[._-](\d{4})/.exec(fname);if(m)mode=`${m[3]}-${m[2]}-${m[1]}`}
+  const by={};
+  for(const k of ['g','r']) for(const row of ctx.out[k]){
+    const d=row.dt||mode; delete row.dt;
+    if(!d) continue;
+    (by[d]??={date:d,name:fname,g:[],l:[],r:[],dl:[]})[k].push(row);
+  }
+  const docs=Object.values(by).sort((a,b)=>a.date<b.date?-1:1);
+  if(!docs.length) throw new Error("hech qanday qator topilmadi (sana yoki GCA/DRR qatorlari yo'q)");
+  return docs;
 }
 async function ingest(files){
   if(role!=='edit') return;
@@ -269,11 +280,12 @@ async function ingest(files){
     const line=document.createElement('div');
     try{
       const wb=XLSX.read(await f.arrayBuffer(),{type:'array',cellDates:true});
-      const doc=parseWorkbook(wb,f.name);
-      await api('saveDay',{doc});
-      days[doc.date]=doc;
-      line.className='ok'; line.textContent=`✓ ${doc.date}: GCA ${doc.g.length}, DRR ${doc.r.length}, DRL ${doc.dl.length}, Line Stop ${doc.l.length}`;
-      ym=doc.date.slice(0,7); selDay=null;
+      const docs=parseWorkbook(wb,f.name);
+      for(let i=0;i<docs.length;i+=10) await api('saveDays',{docs:docs.slice(i,i+10)});
+      docs.forEach(d=>days[d.date]=d);
+      const g=sum(docs,d=>d.g.length), r=sum(docs,d=>d.r.length);
+      line.className='ok'; line.textContent=`✓ ${f.name}: ${docs.length} kun (${docs[0].date} … ${docs.at(-1).date}), GCA ${g}, DRR ${r}`;
+      ym=docs.at(-1).date.slice(0,7); selDay=null;
     }catch(e){line.className='err';line.textContent=`✗ ${f.name}: ${e.message||e}`}
     box.appendChild(line);
   }
@@ -286,7 +298,7 @@ const scope=()=>selDay?monthDocs().filter(d=>d.date===selDay):monthDocs();
 const sum=(a,f)=>a.reduce((s,x)=>s+f(x),0);
 function dayStats(d){
   const g={};MODELS.forEach(m=>g[m]=sum(d.g.filter(x=>x.m===m),x=>x.w));
-  return {g,gt:sum(d.g,x=>x.w),gn:d.g.length,drr:sum(d.r,x=>x.q),drl:sum(d.dl,x=>x.q),ls:sum(d.l,x=>x.min)};
+  return {g,gt:sum(d.g,x=>x.w),gn:d.g.length,drr:sum(d.r,x=>x.q),dm:Object.fromEntries(allM().map(m=>[m,sum(d.r.filter(x=>x.m===m),x=>x.q)]))};
 }
 function topBy(list,key){
   const m={};list.forEach(x=>{const k=x[key]||'—';(m[k]??={k,v:0,n:0});m[k].v+=x.w;m[k].n++});
@@ -336,13 +348,13 @@ function parseRules(txt){return txt.split('\n').map(l=>l.trim()).filter(Boolean)
 function sexOf(r){const t=(r.d+' '+r.f).toLowerCase();for(const q of sexRules)if(q.k.some(k=>t.includes(k)))return q.s;return UN}
 function renderSex(md,sc){
   const rows=allRows(sc), names=[...new Set([...sexRules.map(q=>q.s),...rows.map(r=>r.sx)])];
-  const A=n=>{const x=rows.filter(r=>r.sx===n),g=x.filter(r=>r.t==='GCA');return {g:sum(g,r=>r.v),n:g.length,drr:sum(x.filter(r=>r.t==='DRR'),r=>r.v),drl:sum(x.filter(r=>r.t==='DRL'),r=>r.v),ls:sum(x.filter(r=>r.t==='Line Stop'),r=>r.v)}};
-  $('sexes').innerHTML=rows.length?`<table><thead><tr><th>Sex</th><th class="num">GCA ball</th><th class="num">Nuqsonlar</th><th class="num">DRR</th><th class="num">DRL</th><th class="num">Line Stop</th></tr></thead><tbody>${names.map(n=>{const a=A(n);return `<tr><td><span class="tag${n===UN?' un':''}">${esc(n)}</span></td><td class="num">${a.g}</td><td class="num">${a.n}</td><td class="num">${a.drr}</td><td class="num">${a.drl}</td><td class="num">${a.ls}</td></tr>`}).join('')}</tbody></table>`:'<div class="empty">Ma\'lumot yo\'q</div>';
+  const A=n=>{const x=rows.filter(r=>r.sx===n),g=x.filter(r=>r.t==='GCA');return {g:sum(g,r=>r.v),n:g.length,drr:sum(x.filter(r=>r.t==='DRR'),r=>r.v)}};
+  $('sexes').innerHTML=rows.length?`<table><thead><tr><th>Sex</th><th class="num">GCA ball</th><th class="num">Nuqsonlar</th><th class="num">DRR</th></tr></thead><tbody>${names.map(n=>{const a=A(n);return `<tr><td><span class="tag${n===UN?' un':''}">${esc(n)}</span></td><td class="num">${a.g}</td><td class="num">${a.n}</td><td class="num">${a.drr}</td></tr>`}).join('')}</tbody></table>`:'<div class="empty">Ma\'lumot yo\'q</div>';
   const un={};allRows(md).filter(r=>r.sx===UN).forEach(r=>{const k=r.d.split(' › ')[1]||r.d;un[k]=(un[k]||0)+1});
   const top=Object.entries(un).sort((a,b)=>b[1]-a[1]).slice(0,12);
   $('unas').textContent=top.length?`Sexi belgilanmagan detallar (bu oy): ${top.map(([k,n])=>`${k} (${n})`).join(', ')}`:(md.length?'Hamma yozuvning sexi aniqlangan.':'');
 }
-const METRICS=[['g','GCA ball'],['drr','DRR'],['drl','DRL'],['ls','Line Stop (daq)']];
+const METRICS=[['g','GCA ball'],['drr','DRR']];
 function effTargets(){
   if(targets[ym]) return {t:targets[ym].v||{},from:ym};
   const ks=Object.keys(targets).filter(k=>k<ym).sort();
@@ -352,10 +364,10 @@ function modelAgg(docs,m){
   const gs=docs.flatMap(d=>d.g).filter(x=>m==='Jami'||x.m===m);
   const f=(arr,k)=>arr.filter(x=>m==='Jami'||x.m===m);
   return {g:sum(gs,x=>x.w),n:gs.length,po:new Set(gs.map(x=>x.po).filter(Boolean)).size,
-    drr:sum(f(docs.flatMap(d=>d.r)),x=>x.q),drl:sum(f(docs.flatMap(d=>d.dl)),x=>x.q),ls:sum(f(docs.flatMap(d=>d.l)),x=>x.min)};
+    drr:sum(f(docs.flatMap(d=>d.r)),x=>x.q)};
 }
 function renderModels(md){
-  const {t,from}=effTargets(); const rowsM=[...MODELS,'Jami'];
+  const {t,from}=effTargets(); const rowsM=[...allM(),'Jami'];
   $('thint').textContent=from?(from===ym?'Target shu oy uchun kiritilgan. Limit sifatida o\'qiladi: kam bo\'lgani yaxshi.':`Target ${from} oyidan olingan (bu oy uchun alohida kiritilmagan).`):"Target hali kiritilmagan. «Target kiritish» tugmasi orqali oylik limitlarni yozing.";
   const tg=(m,k)=>{
     let v=t[m]?.[k]; if(v!=null&&v!=='')return Number(v);
@@ -365,8 +377,8 @@ function renderModels(md){
     if(T==null||!T) return `<td class="num">${val}</td>`;
     const p=val/T*100, cls=p>100?'m-bad':p>80?'m-warn':'m-ok';
     return `<td class="num">${val} <span class="pc">/ ${T}</span><div class="meter" role="img" aria-label="${Math.round(p)}%"><i class="${cls}" style="width:${Math.min(p,100)}%"></i></div><span class="pc ${p>100?'bad':''}">${Math.round(p)}%${p>100?' · limitdan oshdi':''}</span></td>`};
-  $('models').innerHTML=md.length||from?`<table><thead><tr><th>Model</th><th class="num">GCA ball</th><th class="num">Nuqsonlar</th><th class="num">Nuqsonli avto (PONO)</th><th class="num">DRR</th><th class="num">DRL</th><th class="num">Line Stop (daq)</th></tr></thead><tbody>${rowsM.map(m=>{const a=modelAgg(md,m);
-    return `<tr><td>${m==='Jami'?'<b>Jami</b>':`<i class="dot" style="background:${MC[m]}"></i>${m}`}</td>${cell(m,'g',a.g)}<td class="num">${a.n}</td><td class="num">${a.po}</td>${cell(m,'drr',a.drr)}${cell(m,'drl',a.drl)}${cell(m,'ls',a.ls)}</tr>`}).join('')}</tbody></table>`:'<div class="empty">Bu oy uchun hisobot yo\'q.</div>';
+  $('models').innerHTML=md.length||from?`<table><thead><tr><th>Model</th><th class="num">GCA ball</th><th class="num">Nuqsonlar</th><th class="num">Nuqsonli avto (PONO)</th><th class="num">DRR</th></tr></thead><tbody>${rowsM.map(m=>{const a=modelAgg(md,m);
+    return `<tr><td>${m==='Jami'?'<b>Jami</b>':`<i class="dot" style="background:${mc(m)}"></i>${m}`}</td>${cell(m,'g',a.g)}<td class="num">${a.n}</td><td class="num">${a.po}</td>${cell(m,'drr',a.drr)}</tr>`}).join('')}</tbody></table>`:'<div class="empty">Bu oy uchun hisobot yo\'q.</div>';
   // form
   const fm=$('tform'); if(fm.dataset.ym!==ym){fm.dataset.ym=ym;
     const own=targets[ym]?.v||t;
@@ -380,8 +392,6 @@ function allRows(docs){
   docs.forEach(d=>{
     d.g.forEach(x=>out.push({date:d.date,t:'GCA',m:x.m,d:x.d,f:x.f,sh:x.sh,v:x.w,u:'ball',po:x.po}));
     d.r.forEach(x=>out.push({date:d.date,t:'DRR',m:x.m,d:x.d,f:x.f,sh:x.sh,v:x.q,u:'dona'}));
-    d.dl.forEach(x=>out.push({date:d.date,t:'DRL',m:x.m,d:x.d,f:x.f,sh:x.sh,v:x.q,u:'dona'}));
-    d.l.forEach(x=>out.push({date:d.date,t:'Line Stop',m:x.m,d:x.d,f:x.f,sh:x.sh,v:x.min,u:'daq'}));
   });
   out.forEach(r=>r.sx=sexOf(r));
   return out.sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0);
@@ -397,31 +407,30 @@ function render(){
   $('seld').innerHTML=selDay?`<span class="pill">Tanlangan kun: ${selDay.split('-').reverse().join('.')}<button id="clr">Butun oy</button></span>`:'';
   if($('clr'))$('clr').onclick=()=>{selDay=null;render()};
 
-  const gT=sum(st,s=>s.gt), gN=sum(st,s=>s.gn), drr=sum(st,s=>s.drr), drl=sum(st,s=>s.drl), ls=sum(st,s=>s.ls);
+  const gT=sum(st,s=>s.gt), gN=sum(st,s=>s.gn), drr=sum(st,s=>s.drr);
   const per=MODELS.map(m=>`<span><i class="dot" style="background:${MC[m]}"></i>${m} ${sum(st,s=>s.g[m])}</span>`).join('');
   const K=(l,v,s)=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s||'&nbsp;'}</div></div>`;
-  $('kpis').innerHTML=K('GCA ball',gT,per)+K('GCA nuqsonlar',gN,sc.length?`kuniga o'rtacha ${(gT/sc.length).toFixed(1)} ball`:'')+K('DRR',drr,'dona')+K('DRL',drl,'dona')+K('Line Stop',ls,'daqiqa')+K('Hisobot kunlari',sc.length,selDay?'':`${md.length} / ${new Date(y,mo,0).getDate()} kun`);
+  $('kpis').innerHTML=K('GCA ball',gT,per)+K('GCA nuqsonlar',gN,sc.length?`kuniga o'rtacha ${(gT/sc.length).toFixed(1)} ball`:'')+K('DRR',drr,'dona')+K('Hisobot kunlari',sc.length,selDay?'':`${md.length} / ${new Date(y,mo,0).getDate()} kun`);
 
   const S1=MODELS.map(m=>({key:m,name:m,color:MC[m]}));
-  const S2=[{key:'drr',name:'DRR',color:'var(--c-drr)'},{key:'drl',name:'DRL',color:'var(--c-drl)'}];
-  const S3=[{key:'ls',name:'Line Stop (daq)',color:'var(--c-ls)'}];
-  legend('lg1',S1);legend('lg2',S2);
+  const S2=allM().map(m=>({key:m,name:m,color:mc(m)}));
+    legend('lg1',S1);legend('lg2',S2);
   if(md.length||true){
     stack('ch1',S1,(d,k)=>dayStats(d).g[k],'GCA ball');
-    stack('ch2',S2,(d,k)=>dayStats(d)[k],'DRR va DRL');
-    stack('ch3',S3,(d,k)=>dayStats(d)[k],'Line Stop daqiqa');
+    stack('ch2',S2,(d,k)=>dayStats(d).dm[k]||0,'DRR');
   }
   const g=sc.flatMap(d=>d.g);
   hbars('hb1',topBy(g,'f'));
   hbars('hb2',topBy(g,'p'));
+  { const m={};sc.flatMap(d=>d.r).forEach(x=>{const k=x.f||'—';(m[k]??={k,v:0,n:0});m[k].v+=x.q;m[k].n++});hbars('hb3',Object.values(m).sort((a,b)=>b.v-a.v).slice(0,8)); }
 
-  const sh=['Day','Night'].map(s=>`<tr><td>${s==='Day'?'Kunduzgi (Day)':'Tungi (Night)'}</td><td class="num">${sum(sc.flatMap(d=>d.g).filter(x=>x.sh===s),x=>x.w)}</td><td class="num">${sum(sc.flatMap(d=>d.r).filter(x=>x.sh===s),x=>x.q)}</td><td class="num">${sum(sc.flatMap(d=>d.dl).filter(x=>x.sh===s),x=>x.q)}</td><td class="num">${sum(sc.flatMap(d=>d.l).filter(x=>x.sh===s),x=>x.min)}</td></tr>`).join('');
-  $('shift').innerHTML=`<table><thead><tr><th>Smena</th><th class="num">GCA ball</th><th class="num">DRR</th><th class="num">DRL</th><th class="num">Line Stop</th></tr></thead><tbody>${sh}</tbody></table>`;
+  const sh=['Day','Night'].map(s=>`<tr><td>${s==='Day'?'Kunduzgi (Day)':'Tungi (Night)'}</td><td class="num">${sum(sc.flatMap(d=>d.g).filter(x=>x.sh===s),x=>x.w)}</td><td class="num">${sum(sc.flatMap(d=>d.r).filter(x=>x.sh===s),x=>x.q)}</td></tr>`).join('');
+  $('shift').innerHTML=`<table><thead><tr><th>Smena</th><th class="num">GCA ball</th><th class="num">DRR</th></tr></thead><tbody>${sh}</tbody></table>`;
 
   renderModels(md); renderSex(md,sc);
   { const fx=$('fx'),c0=fx.value; fx.innerHTML='<option value="all">Barcha sexlar</option>'+[...new Set(allRows(md).map(r=>r.sx))].map(x=>`<option>${esc(x)}</option>`).join(''); fx.value=[...fx.options].some(o=>o.value===c0)?c0:'all'; }
   // records table
-  const types=['all','GCA','DRR','DRL','Line Stop'];
+  const types=['all','GCA','DRR'];
   $('tchips').innerHTML=types.map(t=>`<button data-t="${t}" aria-pressed="${tf===t}">${t==='all'?'Hammasi':t}</button>`).join('');
   const fm=$('fm'), cur=fm.value; fm.innerHTML='<option value="all">Barcha modellar</option>'+[...new Set(allRows(md).map(r=>r.m))].map(m=>`<option>${esc(m)}</option>`).join(''); fm.value=[...fm.options].some(o=>o.value===cur)?cur:'all';
   const q=$('fq').value.trim().toLowerCase();
@@ -431,7 +440,7 @@ function render(){
   if($('more'))$('more').onclick=()=>{limit+=150;render()};
 
   // daily summary
-  $('daily').innerHTML=md.length?`<table><thead><tr><th>Sana</th>${MODELS.map(m=>`<th class="num">${m}</th>`).join('')}<th class="num">GCA jami</th><th class="num">DRR</th><th class="num">DRL</th><th class="num">Line Stop</th></tr></thead><tbody>${md.map(d=>{const s=dayStats(d);return `<tr data-d="${d.date}" tabindex="0" class="${d.date===selDay?'sel':''}"><td>${d.date.split('-').reverse().join('.')}</td>${MODELS.map(m=>`<td class="num">${s.g[m]}</td>`).join('')}<td class="num"><b>${s.gt}</b></td><td class="num">${s.drr}</td><td class="num">${s.drl}</td><td class="num">${s.ls}</td></tr>`}).join('')}</tbody></table>`:'<div class="empty">Ma\'lumot yo\'q</div>';
+  $('daily').innerHTML=md.length?`<table><thead><tr><th>Sana</th>${MODELS.map(m=>`<th class="num">${m}</th>`).join('')}<th class="num">GCA jami</th><th class="num">DRR</th></tr></thead><tbody>${md.map(d=>{const s=dayStats(d);return `<tr data-d="${d.date}" tabindex="0" class="${d.date===selDay?'sel':''}"><td>${d.date.split('-').reverse().join('.')}</td>${MODELS.map(m=>`<td class="num">${s.g[m]}</td>`).join('')}<td class="num"><b>${s.gt}</b></td><td class="num">${s.drr}</td></tr>`}).join('')}</tbody></table>`:'<div class="empty">Ma\'lumot yo\'q</div>';
 
   const ro=role!=='edit';
   ['pick','tedit','rsave'].forEach(id=>$(id).disabled=ro);

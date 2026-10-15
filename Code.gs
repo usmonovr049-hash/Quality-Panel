@@ -28,7 +28,8 @@ function doPost(e) {
     const lock = LockService.getScriptLock();
     lock.waitLock(20000);
     try {
-      if (q.action === 'saveDay') saveDay_(q.doc);
+      if (q.action === 'saveDay') saveDays_([q.doc]);
+      else if (q.action === 'saveDays') saveDays_(q.docs);
       else if (q.action === 'saveTargets') setSetting_('target:' + q.ym, JSON.stringify({ ym: q.ym, v: q.v }));
       else if (q.action === 'saveRules') setSetting_('rules', String(q.txt || ''));
       else return out_({ error: 'noma\'lum amal' });
@@ -85,8 +86,6 @@ function loadAll_(role) {
     const type = r[1], m = String(r[2]), desc = String(r[3]), f = String(r[4]), val = Number(r[5]) || 0, sh = String(r[6] || '');
     if (type === 'GCA') d.g.push({ m: m, a: String(r[8] || ''), p: String(r[9] || ''), d: desc, f: f, w: val, po: String(r[7] || ''), sh: sh });
     else if (type === 'DRR') d.r.push({ m: m, d: desc, f: f, q: val, sh: sh });
-    else if (type === 'DRL') d.dl.push({ m: m, d: desc, f: f, q: val, sh: sh });
-    else if (type === 'Line Stop') d.l.push({ m: m, d: desc, f: f, min: val, sh: sh });
   });
   const targets = {};
   let rules = '';
@@ -102,17 +101,21 @@ function loadAll_(role) {
   return { role: role, days: days, targets: targets, rules: rules };
 }
 
-function saveDay_(doc) {
-  if (!doc || !/^\d{4}-\d{2}-\d{2}$/.test(doc.date)) throw new Error('Sana noto\'g\'ri');
-  const date = doc.date, name = String(doc.name || '');
+function saveDays_(docs) {
+  if (!docs || !docs.length) throw new Error("Hujjat yo'q");
+  const dates = {}, add = [];
+  docs.forEach(function (doc) {
+    if (!doc || !/^\d{4}-\d{2}-\d{2}$/.test(doc.date)) throw new Error("Sana noto'g'ri");
+    const date = doc.date, name = String(doc.name || '');
+    dates[date] = true;
+    (doc.g || []).forEach(function (x) { add.push([date, 'GCA', x.m, x.d, x.f, x.w, x.sh, x.po, x.a, x.p, name]); });
+    (doc.r || []).forEach(function (x) { add.push([date, 'DRR', x.m, x.d, x.f, x.q, x.sh, '', '', '', name]); });
+  });
   const sh = sheet_(SHEET_DAYS, HEAD);
-  const keep = readRows_().filter(function (r) { return dateStr_(r[0]) !== date; })
-    .map(function (r) { r[0] = dateStr_(r[0]); return r; });
-  const add = [];
-  (doc.g || []).forEach(function (x) { add.push([date, 'GCA', x.m, x.d, x.f, x.w, x.sh, x.po, x.a, x.p, name]); });
-  (doc.r || []).forEach(function (x) { add.push([date, 'DRR', x.m, x.d, x.f, x.q, x.sh, '', '', '', name]); });
-  (doc.dl || []).forEach(function (x) { add.push([date, 'DRL', x.m, x.d, x.f, x.q, x.sh, '', '', '', name]); });
-  (doc.l || []).forEach(function (x) { add.push([date, 'Line Stop', x.m, x.d, x.f, x.min, x.sh, '', '', '', name]); });
+  // mavjud qatorlar: shu kunlar va (kerak bo'lmagan) DRL / Line Stop qatorlari tashlanadi
+  const keep = readRows_().filter(function (r) {
+    return !dates[dateStr_(r[0])] && (r[1] === 'GCA' || r[1] === 'DRR');
+  }).map(function (r) { r[0] = dateStr_(r[0]); return r; });
   const all = keep.concat(add).sort(function (a, b) { return a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0; });
   const oldN = sh.getLastRow() - 1;
   if (oldN > 0) sh.getRange(2, 1, oldN, HEAD.length).clearContent();
