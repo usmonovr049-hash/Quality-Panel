@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<title>Xaridor Sifat Paneli</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+/* Layout: sticky header with month switcher + upload; KPI strip; 2-col charts; defect table; daily summary table */
+:root{
+  color-scheme:light;
+  --bg:#ffffff; --surface:#ffffff; --ink:#14202b; --ink-2:#4a5866; --ink-3:#7b8794;
+  --line:#e1e6eb; --grid:#e9edf1; --accent:#262d96; --accent-ink:#ffffff; --sel:#e9ecfb; --bar:#6b7a8c;
+  --c-onix:#2a78d6; --c-cobalt:#eb6834; --c-tracker:#1baf7a; --c-drr:#6250d6; --c-drl:#e87ba4; --c-ls:#6b7a8c;
+  --bad:#b3261e; --ok:#1d7a4d;
+  --f-sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-sans);font-size:14px;line-height:1.45;
+  padding-inline:max(16px,env(safe-area-inset-left,0px)) max(16px,env(safe-area-inset-right,0px));padding-block:0 40px}
+.wrap{max-width:1280px;margin:0 auto}
+header{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;justify-content:space-between;padding:18px 0 14px}
+h1{font-size:20px;font-weight:600;margin:0;letter-spacing:-.01em}
+.sub{color:var(--ink-3);font-size:12.5px;margin-top:2px}
+.tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button,select,input[type=search]{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:7px 12px;min-height:36px}
+button{cursor:pointer}
+button:hover:not(:disabled){border-color:var(--ink-3)}
+button:disabled{opacity:.4;cursor:default}
+button:focus-visible,select:focus-visible,input:focus-visible,tr[data-d]:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:500}
+.month{display:flex;align-items:center;gap:6px}
+.month b{min-width:130px;text-align:center;font-weight:600;font-size:15px}
+.drop{border:1.5px dashed var(--line);border-radius:8px;padding:12px 16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;background:var(--surface);margin-bottom:14px;color:var(--ink-2)}
+.drop.over{border-color:var(--accent);background:var(--sel)}
+.msgs{font-size:12.5px;display:grid;gap:2px;font-family:var(--f-mono)}
+.msgs .ok{color:var(--ok)} .msgs .err{color:var(--bad)}
+.banner{background:var(--sel);border-radius:6px;padding:8px 12px;margin-bottom:14px;color:var(--ink-2);font-size:13px}
+.seld{display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.pill{display:inline-flex;gap:8px;align-items:center;background:var(--sel);border-radius:999px;padding:4px 6px 4px 12px;font-weight:500}
+.pill button{min-height:0;padding:1px 9px;border-radius:999px;font-size:12px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px;min-width:0}
+.kpi .l{font-size:11.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em}
+.kpi .v{font-family:var(--f-mono);font-size:28px;font-weight:500;line-height:1.2;margin-top:4px;font-variant-numeric:tabular-nums}
+.kpi .s{font-size:12px;color:var(--ink-3);margin-top:2px;display:flex;flex-wrap:wrap;gap:2px 10px}
+.dot{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px;vertical-align:baseline}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-bottom:14px}
+@media(max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px;min-width:0}
+.card h2{font-size:14px;font-weight:600;margin:0 0 2px}
+.card .hint{font-size:12px;color:var(--ink-3);margin-bottom:8px}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--ink-2);margin:4px 0 6px}
+.chart{width:100%;min-height:120px}
+svg text{font-family:var(--f-mono);font-size:10.5px;fill:var(--ink-3)}
+.hb{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) auto;gap:6px 10px;align-items:center;font-size:12.5px}
+.hb .n{overflow-wrap:anywhere}
+.hb .tr{height:10px;background:var(--grid);border-radius:3px;overflow:hidden}
+.hb .tr i{display:block;height:100%;background:var(--bar);border-radius:0 3px 3px 0}
+.hb .val{font-family:var(--f-mono);font-variant-numeric:tabular-nums;text-align:right}
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 10px}
+.chips{display:flex;gap:4px;flex-wrap:wrap}
+.chips button{padding:5px 11px;min-height:32px}
+.chips button[aria-pressed=true]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);text-align:left;font-weight:500;padding:6px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:7px 10px;border-bottom:1px solid var(--grid);vertical-align:top}
+td.num,th.num{white-space:nowrap;text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+tr[data-d]{cursor:pointer} tr[data-d]:hover td{background:var(--sel)} tr.sel td{background:var(--sel)}
+.tag{font-size:11.5px;font-weight:500;padding:1px 7px;border-radius:4px;background:var(--grid);white-space:nowrap}
+.empty{padding:36px 12px;text-align:center;color:var(--ink-3)}
+#tip{position:fixed;z-index:9;pointer-events:none;background:var(--ink);color:var(--surface);padding:7px 10px;border-radius:6px;font-size:12px;line-height:1.5;display:none;max-width:240px}
+#tip b{font-weight:600} #tip .r{display:flex;justify-content:space-between;gap:14px;font-family:var(--f-mono)}
+.th{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:6px}
+.meter{height:6px;background:var(--grid);border-radius:3px;margin-top:4px;min-width:90px;overflow:hidden}
+.meter i{display:block;height:100%;border-radius:0 3px 3px 0}
+.m-ok{background:var(--ok)} .m-warn{background:#c98500} .m-bad{background:var(--bad)}
+.pc{font-size:11.5px;color:var(--ink-3)} .pc.bad{color:var(--bad);font-weight:500}
+#tform{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px 12px;margin:8px 0 14px;align-items:end}
+#tform label{display:grid;gap:2px;font-size:12px;color:var(--ink-2)}
+#tform input{font:inherit;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:6px 8px;min-height:34px;font-family:var(--f-mono);width:100%}
+#tform .full{grid-column:1/-1;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#tform h3{grid-column:1/-1;margin:6px 0 0;font-size:12.5px;color:var(--ink)}
+textarea{width:100%;font:inherit;font-family:var(--f-mono);font-size:12.5px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:8px;resize:vertical}
+code{font-family:var(--f-mono);font-size:12px;background:var(--grid);padding:0 4px;border-radius:3px}
+.tag.un{background:transparent;border:1px dashed var(--ink-3);color:var(--ink-3)}
+.brand{display:flex;align-items:center;gap:14px}.brand img{flex:none;display:block}
+.brand .wm{font-size:12px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px}
+.brand .wm2{font-size:11.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em}
+
+:root{--brand:#262d96;--brand-soft:#eef0fb}
+header{border-bottom:3px solid var(--brand);margin-bottom:16px;padding-bottom:14px}
+h1{color:var(--brand)}
+.brand .wm{color:var(--ink-2);font-weight:500}
+.card h2{color:var(--brand)}
+.card{border-color:#dfe3f3}
+th{background:var(--brand-soft);color:#3b4390}
+button.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.chips button[aria-pressed=true]{background:var(--brand);border-color:var(--brand);color:#fff}
+.kpi{border-color:transparent}
+.kpi:nth-child(1){background:#e8f0fc}.kpi:nth-child(1) .v{color:#1f5fb5}
+.kpi:nth-child(2){background:#fdeee6}.kpi:nth-child(2) .v{color:#b84a1d}
+.kpi:nth-child(3){background:#eeebfb}.kpi:nth-child(3) .v{color:#4a3bb5}
+.kpi:nth-child(4){background:#fceaf1}.kpi:nth-child(4) .v{color:#b23a68}
+.kpi:nth-child(5){background:#fdf4dc}.kpi:nth-child(5) .v{color:#8a5f00}
+.kpi:nth-child(6){background:#e5f6ef}.kpi:nth-child(6) .v{color:#157a55}
+.kpi .l{color:#4a5866}
+.hb .tr i{background:var(--brand)}
+.drop{background:var(--brand-soft);border-color:#b9c0ea}
+.login{position:fixed;inset:0;background:var(--bg);display:grid;place-items:center;z-index:20}
+.login form{display:grid;gap:10px;width:min(320px,86vw)}
+.login input{font:inherit;padding:9px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink)}
+[hidden]{display:none!important}
+body{margin:0}
+img{max-width:100%}
+html{-webkit-text-size-adjust:100%}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+<header>
+  <div>
+    <div class="brand"><img src="logo.png" alt="Uz Koram Ko logotipi" width="56" height="48"><div><div class="wm">Uz Koram Ko MCHJ QK</div><h1>Xaridor Sifat Paneli</h1></div></div>
+    <div class="sub">GCA · DRR · DRL · Line Stop — Uz Koram ta'minoti, kunlik hisobotlar asosida</div>
+  </div>
+  <div class="tools">
+    <div class="month"><button id="prev" aria-label="Oldingi oy">‹</button><b id="mlabel"></b><button id="next" aria-label="Keyingi oy">›</button></div>
+    <button id="reload" title="Ma'lumotni qayta yuklash">Yangilash</button>
+    <button class="primary" id="pick">Hisobot yuklash</button>
+    <button id="logout">Chiqish</button>
+    <input type="file" id="file" accept=".xlsx,.xls" multiple hidden>
+  </div>
+</header>
+
+<div class="drop" id="drop">
+  <span>Har kungi Daily_report faylini (.xlsx) shu yerga tashlang yoki «Hisobot yuklash»ni bosing. Bir nechta faylni birdan yuklash mumkin. Bir sanaga ikkinchi marta yuklansa, eskisi almashadi.</span>
+  <div class="msgs" id="msgs" aria-live="polite"></div>
+</div>
+<div class="banner" id="banner" hidden></div>
+<div class="seld" id="seld"></div>
+<div class="kpis" id="kpis"></div>
+
+<section class="card" style="margin-bottom:14px">
+  <div class="th"><div><h2>Modellar bo'yicha oylik ko'rsatkich</h2><div class="hint" id="thint"></div></div><button id="tedit">Target kiritish</button></div>
+  <form id="tform" hidden></form>
+  <div class="tw" id="models"></div>
+</section>
+
+<div class="grid">
+  <section class="card"><h2>GCA ballari — kunlar bo'yicha</h2><div class="hint">Nuqson og'irliklari yig'indisi. Kunni tanlash uchun ustunni bosing.</div>
+    <div class="legend" id="lg1"></div><div class="chart" id="ch1"></div></section>
+  <section class="card"><h2>DRR va DRL — kunlar bo'yicha</h2><div class="hint">Qayd etilgan holatlar soni (QTY).</div>
+    <div class="legend" id="lg2"></div><div class="chart" id="ch2"></div></section>
+  <section class="card"><h2>Eng ko'p ball bergan nuqson turlari</h2><div class="hint">GCA, tanlangan davr bo'yicha</div><div class="hb" id="hb1"></div></section>
+  <section class="card"><h2>Eng ko'p ball bergan detallar</h2><div class="hint">GCA, tanlangan davr bo'yicha</div><div class="hb" id="hb2"></div></section>
+  <section class="card"><h2>Line Stop — daqiqa</h2><div class="hint">To'xtab qolgan vaqt, kunlar bo'yicha</div><div class="chart" id="ch3"></div></section>
+  <section class="card"><h2>Smena bo'yicha</h2><div class="hint">GCA ballari va DRR/DRL soni</div><div class="tw" id="shift"></div></section>
+</div>
+
+<div class="grid">
+  <section class="card"><h2>Sexlar bo'yicha</h2><div class="hint">Muammo qaysi sexga tegishli ekani, quyidagi qoidalar asosida aniqlanadi.</div><div class="tw" id="sexes"></div></section>
+  <section class="card"><h2>Sex qoidalari</h2>
+    <div class="hint">Har qatorga bitta qoida: <code>kalit so'z, kalit so'z = Sex nomi</code>. Kalit so'z detal, joy yoki nuqson nomida qidiriladi. Birinchi mos kelgan qoida ishlaydi.</div>
+    <textarea id="rules" rows="6" spellcheck="false" placeholder="bumper, fascia, spoiler = 2-Injection&#10;dirt, orange peel, sags = Bo'yoq"></textarea>
+    <div class="filters"><button class="primary" id="rsave">Qoidalarni saqlash</button><span class="pc" id="rmsg"></span></div>
+    <div class="hint" id="unas"></div>
+  </section>
+</div>
+
+<section class="card" style="margin-bottom:14px">
+  <h2>Barcha yozuvlar</h2>
+  <div class="filters">
+    <div class="chips" id="tchips"></div>
+    <select id="fm" aria-label="Model"><option value="all">Barcha modellar</option></select>
+    <select id="fx" aria-label="Sex"><option value="all">Barcha sexlar</option></select>
+    <select id="fs" aria-label="Smena"><option value="all">Ikkala smena</option><option>Day</option><option>Night</option></select>
+    <input type="search" id="fq" placeholder="Qidirish: detal, nuqson…" aria-label="Qidirish">
+  </div>
+  <div class="tw" id="rows"></div>
+</section>
+
+<section class="card">
+  <h2>Kunlik jamlanma</h2><div class="hint">Qatorni bossangiz, panel shu kunga o'tadi.</div>
+  <div class="tw" id="daily"></div>
+</section>
+</div>
+<div id="tip"></div>
+<div id="login" class="login" hidden><form id="lform"><h2>Xaridor Sifat Paneli</h2><label for="lpw">Parol</label><input type="password" id="lpw" autocomplete="current-password"><button class="primary" type="submit">Kirish</button><div id="lerr" class="pc bad" role="alert"></div></form></div>
+
+<script>
+const MODELS=['Onix','Cobalt','Tracker'];
+const MC={Onix:'var(--c-onix)',Cobalt:'var(--c-cobalt)',Tracker:'var(--c-tracker)'};
+const MN=['Yanvar','Fevral','Mart','Aprel','May','Iyun','Iyul','Avgust','Sentyabr','Oktyabr','Noyabr','Dekabr'];
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let targets={}, days={}, ym=null, selDay=null, tf='all', limit=150, role=null, pw='', loadErr='';
+try{pw=localStorage.getItem('uk_pw')||''}catch(e){}
+
+/* ---------- parsing ---------- */
+function iso(v){
+  if(v instanceof Date) return new Date(v.getTime()+12*3600e3).toISOString().slice(0,10);
+  if(typeof v==='number'&&v>30000&&v<80000) return new Date(Math.round((v-25569)*86400e3)).toISOString().slice(0,10);
+  return null;
+}
+const HK={fault:'f',weight:'w','gca weight':'w',models:'models',model:'models',minutes:'min',minute:'min',min:'min',supplier:'sup',zone:'zone',open:'date',data:'date',date:'date',qty:'q',quantity:'q',pono:'po',shift:'sh'};
+const DEF={g:{f:5,w:6,sup:8,zone:10,date:11,po:12,sh:13},l:{models:5,min:6,sup:8,zone:10,date:11,sh:13},r:{f:5,models:6,sup:8,zone:10,date:11,q:12,sh:13},dl:{f:5,models:6,sup:8,zone:10,date:11,q:12,sh:13}};
+const canon=v=>{const t=String(v??'').trim();return MODELS.find(m=>m.toLowerCase()===t.toLowerCase())||t||'—'};
+const norm=v=>String(v??'').toLowerCase().replace(/[^a-z]/g,'');
+function readHeader(r){
+  const h={};let hits=0;
+  r.forEach((v,i)=>{if(typeof v!=='string')return;const k=HK[v.trim().toLowerCase()];if(k&&h[k]==null){h[k]=i;hits++}});
+  const first=typeof r.find(v=>v!=null&&v!=='')==='string'&&/issues?\s*description/i.test(String(r.find(v=>v!=null&&v!=='')));
+  return (hits>=2||first)&&hits>=1?h:null;
+}
+function parseSheet(rows,ctx){
+  const out=ctx.out; let sec='g', model=null, hdr=null;
+  const num=v=>{const n=parseFloat(String(v).replace(',','.'));return isFinite(n)?n:0};
+  for(const r of rows){
+    if(!r||r.every(v=>v==null||v==='')) continue;
+    const filled=r.filter(v=>v!=null&&v!=='');
+    if(filled.length===1&&typeof filled[0]==='string'){
+      const t=norm(filled[0]);
+      const mm=MODELS.find(m=>m.toLowerCase()===t);
+      if(mm){model=mm;sec='g'}
+      else if(t==='linestop'||t==='linestops'){sec='l';hdr=null}
+      else if(t==='drr'){sec='r';hdr=null}
+      else if(t==='drl'){sec='dl';hdr=null}
+      continue;
+    }
+    const h=readHeader(r); if(h){hdr=h;continue}
+    const H=hdr||DEF[sec];
+    const get=k=>H[k]!=null?r[H[k]]:null;
+    const firstCol=Math.min(...Object.values(H));
+    const dt=iso(get('date')); if(dt)ctx.dc[dt]=(ctx.dc[dt]||0)+1;
+    const desc=r.slice(0,firstCol).filter(v=>v!=null&&v!=='').join(' › '); if(!desc) continue;
+    const sh=String(get('sh')||'').trim();
+    const idx=H.f??0, f=String(get('f')||'');
+    if(sec==='g'){
+      if(!get('f')&&!get('w'))continue;
+      const mdl=model||(get('models')?canon(get('models')):'—');
+      out.g.push({m:mdl,a:String(r[0]||''),p:String(r[1]||''),d:desc,f,w:num(get('w')),po:String(get('po')||''),sh});
+    }else if(sec==='l'){
+      out.l.push({m:canon(get('models')),d:desc,f,min:num(get('min')),sh});
+    }else{
+      out[sec].push({m:canon(get('models')),d:desc,f,q:num(get('q'))||1,sh});
+    }
+  }
+}
+function parseWorkbook(wb,fname){
+  const ctx={out:{g:[],l:[],r:[],dl:[]},dc:{}};
+  for(const n of wb.SheetNames){
+    parseSheet(XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:null,raw:true}),ctx);
+  }
+  let date=Object.entries(ctx.dc).sort((x,y)=>y[1]-x[1])[0]?.[0];
+  if(!date){const m=/(\d{2})[._-](\d{2})[._-](\d{4})/.exec(fname);if(m)date=`${m[3]}-${m[2]}-${m[1]}`}
+  if(!date) throw new Error('sana topilmadi (fayl nomida kk.oo.yyyy bo\'lsin)');
+  const o=ctx.out; if(!o.g.length&&!o.l.length&&!o.r.length&&!o.dl.length) throw new Error("hech qanday qator topilmadi");
+  return {date,name:fname,...o};
+}
+async function ingest(files){
+  if(role!=='edit') return;
+  const box=$('msgs'); box.innerHTML='';
+  for(const f of files){
+    const line=document.createElement('div');
+    try{
+      const wb=XLSX.read(await f.arrayBuffer(),{type:'array',cellDates:true});
+      const doc=parseWorkbook(wb,f.name);
+      await api('saveDay',{doc});
+      days[doc.date]=doc;
+      line.className='ok'; line.textContent=`✓ ${doc.date}: GCA ${doc.g.length}, DRR ${doc.r.length}, DRL ${doc.dl.length}, Line Stop ${doc.l.length}`;
+      ym=doc.date.slice(0,7); selDay=null;
+    }catch(e){line.className='err';line.textContent=`✗ ${f.name}: ${e.message||e}`}
+    box.appendChild(line);
+  }
+  render();
+}
+
+/* ---------- aggregation ---------- */
+const monthDocs=()=>Object.values(days).filter(d=>d.date.startsWith(ym)).sort((a,b)=>a.date<b.date?-1:1);
+const scope=()=>selDay?monthDocs().filter(d=>d.date===selDay):monthDocs();
+const sum=(a,f)=>a.reduce((s,x)=>s+f(x),0);
+function dayStats(d){
+  const g={};MODELS.forEach(m=>g[m]=sum(d.g.filter(x=>x.m===m),x=>x.w));
+  return {g,gt:sum(d.g,x=>x.w),gn:d.g.length,drr:sum(d.r,x=>x.q),drl:sum(d.dl,x=>x.q),ls:sum(d.l,x=>x.min)};
+}
+function topBy(list,key){
+  const m={};list.forEach(x=>{const k=x[key]||'—';(m[k]??={k,v:0,n:0});m[k].v+=x.w;m[k].n++});
+  return Object.values(m).sort((a,b)=>b.v-a.v).slice(0,8);
+}
+
+/* ---------- charts ---------- */
+function step(max){for(let k=0;k<7;k++)for(const m of[1,2,5]){const s=m*10**k;if(max/s<=4)return s}return 1}
+function stack(id,series,valFn,unit){
+  const el=$(id); const [y,mo]=ym.split('-').map(Number); const n=new Date(y,mo,0).getDate();
+  const W=Math.max(260,el.clientWidth), H=200, L=34,R=4,T=8,B=22, iw=W-L-R, ih=H-T-B, band=iw/n;
+  const dates=[...Array(n)].map((_,i)=>`${ym}-${String(i+1).padStart(2,'0')}`);
+  const tot=dates.map(d=>days[d]?sum(series,s=>valFn(days[d],s.key)):0);
+  const mx=Math.max(...tot,1), st=step(mx), yM=Math.ceil(mx/st)*st;
+  const Y=v=>T+ih-v/yM*ih;
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${esc(unit)} kunlar bo'yicha">`;
+  for(let v=0;v<=yM;v+=st) s+=`<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--grid)"/><text x="${L-6}" y="${Y(v)+3.5}" text-anchor="end">${v}</text>`;
+  const lab=band>=22?1:band>=12?2:5;
+  dates.forEach((d,i)=>{
+    const x=L+i*band, bw=Math.min(band*.68,26), bx=x+(band-bw)/2;
+    if(d===selDay) s+=`<rect x="${x}" y="${T}" width="${band}" height="${ih}" fill="var(--sel)"/>`;
+    if((i+1)%lab===0||i===0) s+=`<text x="${x+band/2}" y="${H-6}" text-anchor="middle">${i+1}</text>`;
+    if(days[d]){let acc=0;
+      series.forEach((sr,j)=>{const v=valFn(days[d],sr.key);if(!v)return;
+        const y1=Y(acc+v),h=Y(acc)-y1; acc+=v;
+        const top=j===series.length-1||!series.slice(j+1).some(q=>valFn(days[d],q.key));
+        const r=top?Math.min(3,h):0;
+        s+=`<path d="M${bx},${y1+h}V${y1+r}${r?`Q${bx},${y1} ${bx+r},${y1}H${bx+bw-r}Q${bx+bw},${y1} ${bx+bw},${y1+r}`:`H${bx+bw}`}V${y1+h}Z" fill="${sr.color}" stroke="var(--surface)" stroke-width="1.5"/>`});
+    }
+    s+=`<rect data-d="${d}" data-c="${id}" x="${x}" y="${T}" width="${band}" height="${ih+B}" fill="transparent" style="cursor:pointer"/>`;
+  });
+  el.innerHTML=s+'</svg>';
+  el._info=(d)=>{const doc=days[d];const t=`<b>${d.split('-').reverse().join('.')}</b>`;
+    if(!doc) return t+'<div>Hisobot yo\'q</div>';
+    return t+series.map(sr=>`<div class="r"><span>${sr.name}</span><span>${valFn(doc,sr.key)}</span></div>`).join('')};
+}
+function legend(id,series){$(id).innerHTML=series.map(s=>`<span><i class="dot" style="background:${s.color}"></i>${s.name}</span>`).join('')}
+function hbars(id,list,unit){
+  const mx=Math.max(...list.map(x=>x.v),1);
+  $(id).innerHTML=list.length?list.map(x=>`<div class="n">${esc(x.k)}</div><div class="tr"><i style="width:${x.v/mx*100}%"></i></div><div class="val">${x.v} <span style="color:var(--ink-3)">· ${x.n}</span></div>`).join(''):'<div class="empty" style="grid-column:1/-1">Ma\'lumot yo\'q</div>';
+}
+
+
+const UN='Belgilanmagan';
+let sexRules=[], rulesTxt='';
+function parseRules(txt){return txt.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{const i=l.lastIndexOf('=');if(i<1)return null;return{k:l.slice(0,i).split(',').map(x=>x.trim().toLowerCase()).filter(Boolean),s:l.slice(i+1).trim()}}).filter(x=>x&&x.k.length&&x.s)}
+function sexOf(r){const t=(r.d+' '+r.f).toLowerCase();for(const q of sexRules)if(q.k.some(k=>t.includes(k)))return q.s;return UN}
+function renderSex(md,sc){
+  const rows=allRows(sc), names=[...new Set([...sexRules.map(q=>q.s),...rows.map(r=>r.sx)])];
+  const A=n=>{const x=rows.filter(r=>r.sx===n),g=x.filter(r=>r.t==='GCA');return {g:sum(g,r=>r.v),n:g.length,drr:sum(x.filter(r=>r.t==='DRR'),r=>r.v),drl:sum(x.filter(r=>r.t==='DRL'),r=>r.v),ls:sum(x.filter(r=>r.t==='Line Stop'),r=>r.v)}};
+  $('sexes').innerHTML=rows.length?`<table><thead><tr><th>Sex</th><th class="num">GCA ball</th><th class="num">Nuqsonlar</th><th class="num">DRR</th><th class="num">DRL</th><th class="num">Line Stop</th></tr></thead><tbody>${names.map(n=>{const a=A(n);return `<tr><td><span class="tag${n===UN?' un':''}">${esc(n)}</span></td><td class="num">${a.g}</td><td class="num">${a.n}</td><td class="num">${a.drr}</td><td class="num">${a.drl}</td><td class="num">${a.ls}</td></tr>`}).join('')}</tbody></table>`:'<div class="empty">Ma\'lumot yo\'q</div>';
+  const un={};allRows(md).filter(r=>r.sx===UN).forEach(r=>{const k=r.d.split(' › ')[1]||r.d;un[k]=(un[k]||0)+1});
+  const top=Object.entries(un).sort((a,b)=>b[1]-a[1]).slice(0,12);
+  $('unas').textContent=top.length?`Sexi belgilanmagan detallar (bu oy): ${top.map(([k,n])=>`${k} (${n})`).join(', ')}`:(md.length?'Hamma yozuvning sexi aniqlangan.':'');
+}
+const METRICS=[['g','GCA ball'],['drr','DRR'],['drl','DRL'],['ls','Line Stop (daq)']];
+function effTargets(){
+  if(targets[ym]) return {t:targets[ym].v||{},from:ym};
+  const ks=Object.keys(targets).filter(k=>k<ym).sort();
+  return ks.length?{t:targets[ks.at(-1)].v||{},from:ks.at(-1)}:{t:{},from:null};
+}
+function modelAgg(docs,m){
+  const gs=docs.flatMap(d=>d.g).filter(x=>m==='Jami'||x.m===m);
+  const f=(arr,k)=>arr.filter(x=>m==='Jami'||x.m===m);
+  return {g:sum(gs,x=>x.w),n:gs.length,po:new Set(gs.map(x=>x.po).filter(Boolean)).size,
+    drr:sum(f(docs.flatMap(d=>d.r)),x=>x.q),drl:sum(f(docs.flatMap(d=>d.dl)),x=>x.q),ls:sum(f(docs.flatMap(d=>d.l)),x=>x.min)};
+}
+function renderModels(md){
+  const {t,from}=effTargets(); const rowsM=[...MODELS,'Jami'];
+  $('thint').textContent=from?(from===ym?'Target shu oy uchun kiritilgan. Limit sifatida o\'qiladi: kam bo\'lgani yaxshi.':`Target ${from} oyidan olingan (bu oy uchun alohida kiritilmagan).`):"Target hali kiritilmagan. «Target kiritish» tugmasi orqali oylik limitlarni yozing.";
+  const tg=(m,k)=>{
+    let v=t[m]?.[k]; if(v!=null&&v!=='')return Number(v);
+    if(m==='Jami'){const xs=MODELS.map(x=>t[x]?.[k]).filter(x=>x!=null&&x!=='');return xs.length?sum(xs,Number):null}
+    return null};
+  const cell=(m,k,val)=>{const T=tg(m,k);
+    if(T==null||!T) return `<td class="num">${val}</td>`;
+    const p=val/T*100, cls=p>100?'m-bad':p>80?'m-warn':'m-ok';
+    return `<td class="num">${val} <span class="pc">/ ${T}</span><div class="meter" role="img" aria-label="${Math.round(p)}%"><i class="${cls}" style="width:${Math.min(p,100)}%"></i></div><span class="pc ${p>100?'bad':''}">${Math.round(p)}%${p>100?' · limitdan oshdi':''}</span></td>`};
+  $('models').innerHTML=md.length||from?`<table><thead><tr><th>Model</th><th class="num">GCA ball</th><th class="num">Nuqsonlar</th><th class="num">Nuqsonli avto (PONO)</th><th class="num">DRR</th><th class="num">DRL</th><th class="num">Line Stop (daq)</th></tr></thead><tbody>${rowsM.map(m=>{const a=modelAgg(md,m);
+    return `<tr><td>${m==='Jami'?'<b>Jami</b>':`<i class="dot" style="background:${MC[m]}"></i>${m}`}</td>${cell(m,'g',a.g)}<td class="num">${a.n}</td><td class="num">${a.po}</td>${cell(m,'drr',a.drr)}${cell(m,'drl',a.drl)}${cell(m,'ls',a.ls)}</tr>`}).join('')}</tbody></table>`:'<div class="empty">Bu oy uchun hisobot yo\'q.</div>';
+  // form
+  const fm=$('tform'); if(fm.dataset.ym!==ym){fm.dataset.ym=ym;
+    const own=targets[ym]?.v||t;
+    fm.innerHTML=rowsM.map(m=>`<h3>${m}${m==='Jami'?' (bo\'sh qolsa, modellar yig\'indisi)':''}</h3>`+METRICS.map(([k,l])=>`<label for="t_${m}_${k}">${l}<input id="t_${m}_${k}" type="number" min="0" step="any" value="${own[m]?.[k]??''}"></label>`).join('')).join('')+`<div class="full"><button class="primary" type="submit">Saqlash</button><button type="button" id="tcancel">Bekor qilish</button><span id="tmsg" class="pc"></span></div>`;
+    $('tcancel').onclick=()=>{fm.hidden=true};
+  }
+}
+/* ---------- render ---------- */
+function allRows(docs){
+  const out=[];
+  docs.forEach(d=>{
+    d.g.forEach(x=>out.push({date:d.date,t:'GCA',m:x.m,d:x.d,f:x.f,sh:x.sh,v:x.w,u:'ball',po:x.po}));
+    d.r.forEach(x=>out.push({date:d.date,t:'DRR',m:x.m,d:x.d,f:x.f,sh:x.sh,v:x.q,u:'dona'}));
+    d.dl.forEach(x=>out.push({date:d.date,t:'DRL',m:x.m,d:x.d,f:x.f,sh:x.sh,v:x.q,u:'dona'}));
+    d.l.forEach(x=>out.push({date:d.date,t:'Line Stop',m:x.m,d:x.d,f:x.f,sh:x.sh,v:x.min,u:'daq'}));
+  });
+  out.forEach(r=>r.sx=sexOf(r));
+  return out.sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0);
+}
+function render(){
+  const keys=Object.keys(days).sort();
+  if(!ym) ym=(keys.at(-1)||new Date().toISOString().slice(0,10)).slice(0,7);
+  const [y,mo]=ym.split('-').map(Number);
+  $('mlabel').textContent=`${MN[mo-1]} ${y}`;
+  const minM=keys[0]?.slice(0,7)||ym, maxM=keys.at(-1)?.slice(0,7)||ym;
+  $('prev').disabled=ym<=minM; $('next').disabled=ym>=maxM;
+  const md=monthDocs(), sc=scope(), st=sc.map(dayStats);
+  $('seld').innerHTML=selDay?`<span class="pill">Tanlangan kun: ${selDay.split('-').reverse().join('.')}<button id="clr">Butun oy</button></span>`:'';
+  if($('clr'))$('clr').onclick=()=>{selDay=null;render()};
+
+  const gT=sum(st,s=>s.gt), gN=sum(st,s=>s.gn), drr=sum(st,s=>s.drr), drl=sum(st,s=>s.drl), ls=sum(st,s=>s.ls);
+  const per=MODELS.map(m=>`<span><i class="dot" style="background:${MC[m]}"></i>${m} ${sum(st,s=>s.g[m])}</span>`).join('');
+  const K=(l,v,s)=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s||'&nbsp;'}</div></div>`;
+  $('kpis').innerHTML=K('GCA ball',gT,per)+K('GCA nuqsonlar',gN,sc.length?`kuniga o'rtacha ${(gT/sc.length).toFixed(1)} ball`:'')+K('DRR',drr,'dona')+K('DRL',drl,'dona')+K('Line Stop',ls,'daqiqa')+K('Hisobot kunlari',sc.length,selDay?'':`${md.length} / ${new Date(y,mo,0).getDate()} kun`);
+
+  const S1=MODELS.map(m=>({key:m,name:m,color:MC[m]}));
+  const S2=[{key:'drr',name:'DRR',color:'var(--c-drr)'},{key:'drl',name:'DRL',color:'var(--c-drl)'}];
+  const S3=[{key:'ls',name:'Line Stop (daq)',color:'var(--c-ls)'}];
+  legend('lg1',S1);legend('lg2',S2);
+  if(md.length||true){
+    stack('ch1',S1,(d,k)=>dayStats(d).g[k],'GCA ball');
+    stack('ch2',S2,(d,k)=>dayStats(d)[k],'DRR va DRL');
+    stack('ch3',S3,(d,k)=>dayStats(d)[k],'Line Stop daqiqa');
+  }
+  const g=sc.flatMap(d=>d.g);
+  hbars('hb1',topBy(g,'f'));
+  hbars('hb2',topBy(g,'p'));
+
+  const sh=['Day','Night'].map(s=>`<tr><td>${s==='Day'?'Kunduzgi (Day)':'Tungi (Night)'}</td><td class="num">${sum(sc.flatMap(d=>d.g).filter(x=>x.sh===s),x=>x.w)}</td><td class="num">${sum(sc.flatMap(d=>d.r).filter(x=>x.sh===s),x=>x.q)}</td><td class="num">${sum(sc.flatMap(d=>d.dl).filter(x=>x.sh===s),x=>x.q)}</td><td class="num">${sum(sc.flatMap(d=>d.l).filter(x=>x.sh===s),x=>x.min)}</td></tr>`).join('');
+  $('shift').innerHTML=`<table><thead><tr><th>Smena</th><th class="num">GCA ball</th><th class="num">DRR</th><th class="num">DRL</th><th class="num">Line Stop</th></tr></thead><tbody>${sh}</tbody></table>`;
+
+  renderModels(md); renderSex(md,sc);
+  { const fx=$('fx'),c0=fx.value; fx.innerHTML='<option value="all">Barcha sexlar</option>'+[...new Set(allRows(md).map(r=>r.sx))].map(x=>`<option>${esc(x)}</option>`).join(''); fx.value=[...fx.options].some(o=>o.value===c0)?c0:'all'; }
+  // records table
+  const types=['all','GCA','DRR','DRL','Line Stop'];
+  $('tchips').innerHTML=types.map(t=>`<button data-t="${t}" aria-pressed="${tf===t}">${t==='all'?'Hammasi':t}</button>`).join('');
+  const fm=$('fm'), cur=fm.value; fm.innerHTML='<option value="all">Barcha modellar</option>'+[...new Set(allRows(md).map(r=>r.m))].map(m=>`<option>${esc(m)}</option>`).join(''); fm.value=[...fm.options].some(o=>o.value===cur)?cur:'all';
+  const q=$('fq').value.trim().toLowerCase();
+  let rows=allRows(sc).filter(r=>(tf==='all'||r.t===tf)&&(fm.value==='all'||r.m===fm.value)&&($('fx').value==='all'||r.sx===$('fx').value)&&($('fs').value==='all'||r.sh===$('fs').value)&&(!q||(r.d+' '+r.f+' '+(r.po||'')).toLowerCase().includes(q)));
+  const shown=rows.slice(0,limit);
+  $('rows').innerHTML=rows.length?`<table><thead><tr><th>Sana</th><th>Tur</th><th>Model</th><th>Detal / joy</th><th>Nuqson</th><th>PONO</th><th>Sex</th><th>Smena</th><th class="num">Qiymat</th></tr></thead><tbody>${shown.map(r=>`<tr><td style="white-space:nowrap">${r.date.slice(5).split('-').reverse().join('.')}</td><td><span class="tag">${r.t}</span></td><td>${esc(r.m)}</td><td>${esc(r.d)}</td><td>${esc(r.f)}</td><td>${esc(r.po||'')}</td><td><span class="tag${r.sx===UN?' un':''}">${esc(r.sx)}</span></td><td>${esc(r.sh)}</td><td class="num">${r.v} <span style="color:var(--ink-3)">${r.u}</span></td></tr>`).join('')}</tbody></table>${rows.length>limit?`<div style="padding:10px"><button id="more">Yana ko'rsatish (${rows.length-limit})</button></div>`:''}`:`<div class="empty">${md.length?'Filtrga mos yozuv topilmadi.':'Bu oy uchun hisobot yo\'q. Kunlik Excel faylni yuklang.'}</div>`;
+  if($('more'))$('more').onclick=()=>{limit+=150;render()};
+
+  // daily summary
+  $('daily').innerHTML=md.length?`<table><thead><tr><th>Sana</th>${MODELS.map(m=>`<th class="num">${m}</th>`).join('')}<th class="num">GCA jami</th><th class="num">DRR</th><th class="num">DRL</th><th class="num">Line Stop</th></tr></thead><tbody>${md.map(d=>{const s=dayStats(d);return `<tr data-d="${d.date}" tabindex="0" class="${d.date===selDay?'sel':''}"><td>${d.date.split('-').reverse().join('.')}</td>${MODELS.map(m=>`<td class="num">${s.g[m]}</td>`).join('')}<td class="num"><b>${s.gt}</b></td><td class="num">${s.drr}</td><td class="num">${s.drl}</td><td class="num">${s.ls}</td></tr>`}).join('')}</tbody></table>`:'<div class="empty">Ma\'lumot yo\'q</div>';
+
+  const ro=role!=='edit';
+  ['pick','tedit','rsave'].forEach(id=>$(id).disabled=ro);
+  $('drop').style.opacity=ro?.55:1;
+  $('banner').hidden=!(loadErr||(role&&ro));
+  $('banner').textContent=loadErr||"Faqat ko'rish rejimi: ma'lumot yuklash va o'zgartirish uchun tahrirlash parolini kiriting (Chiqish → qayta kiring).";
+}
+
+/* ---------- events ---------- */
+$('pick').onclick=()=>$('file').click();
+$('file').onchange=e=>{ingest([...e.target.files]);e.target.value=''};
+const drop=$('drop');
+['dragover','dragenter'].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.add('over')}));
+['dragleave','drop'].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.remove('over')}));
+drop.addEventListener('drop',e=>ingest([...e.dataTransfer.files].filter(f=>/\.xlsx?$/i.test(f.name))));
+function shiftMonth(k){const [y,m]=ym.split('-').map(Number);const d=new Date(y,m-1+k,1);ym=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;selDay=null;limit=150;render()}
+$('prev').onclick=()=>shiftMonth(-1); $('next').onclick=()=>shiftMonth(1);
+$('tchips').onclick=e=>{const t=e.target.closest('[data-t]');if(t){tf=t.dataset.t;limit=150;render()}};
+['fm','fs','fx'].forEach(i=>$(i).onchange=()=>{limit=150;render()}); $('fq').oninput=()=>{limit=150;render()};
+$('daily').onclick=e=>{const r=e.target.closest('tr[data-d]');if(r){selDay=selDay===r.dataset.d?null:r.dataset.d;render()}};
+$('daily').onkeydown=e=>{if(e.key==='Enter'){const r=e.target.closest('tr[data-d]');if(r)r.click()}};
+$('tedit').onclick=()=>{const f=$('tform');f.hidden=!f.hidden};
+$('tform').onsubmit=async e=>{
+  e.preventDefault(); const v={};
+  [...MODELS,'Jami'].forEach(m=>METRICS.forEach(([k])=>{const x=$(`t_${m}_${k}`).value; if(x!==''){(v[m]??={})[k]=Number(x)}}));
+  const msg=$('tmsg');
+  targets[ym]={ym,v};
+  try{ await api('saveTargets',{ym,v}); msg.textContent='Saqlandi'; }
+  catch(err){msg.textContent="Saqlab bo'lmadi: "+(err.message||err.code||'ruxsat yo\'q')}
+  $('tform').dataset.ym=''; render(); $('tform').hidden=false;
+};
+$('rsave').onclick=async()=>{
+  const txt=$('rules').value; rulesTxt=txt; sexRules=parseRules(txt);
+  try{ await api('saveRules',{txt}); $('rmsg').textContent=`Saqlandi (${sexRules.length} qoida)`; }
+  catch(err){$('rmsg').textContent="Saqlab bo'lmadi: "+(err.message||err.code||'')}
+  render();
+};
+const tip=$('tip');
+document.addEventListener('mousemove',e=>{
+  const t=e.target.closest&&e.target.closest('rect[data-d]');
+  if(!t){tip.style.display='none';return}
+  tip.innerHTML=$(t.dataset.c)._info(t.dataset.d); tip.style.display='block';
+  const w=tip.offsetWidth; tip.style.left=Math.min(e.clientX+14,innerWidth-w-8)+'px'; tip.style.top=(e.clientY+14)+'px';
+});
+document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('rect[data-d]');
+  if(t&&days[t.dataset.d]){selDay=selDay===t.dataset.d?null:t.dataset.d;render()}});
+let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(render,120)});
+
+/* ---------- storage (Google Apps Script) ---------- */
+const API_URL='YOUR_APPS_SCRIPT_URL';
+async function api(action,payload={}){
+  if(!API_URL||API_URL.startsWith('YOUR_')) throw new Error("API_URL sozlanmagan: index.html ichiga Apps Script havolasini yozing (README.md ga qarang).");
+  const r=await fetch(API_URL,{method:'POST',body:JSON.stringify({action,pw,...payload})});
+  const j=await r.json();
+  if(j.error){const e=new Error(j.error==='auth'?"Parol noto'g'ri":j.error);e.code=j.error;throw e}
+  return j;
+}
+function showLogin(msg){$('login').hidden=false;$('lerr').textContent=msg||'';setTimeout(()=>$('lpw').focus(),50)}
+async function loadAll(){
+  try{
+    const j=await api('load');
+    role=j.role; days=j.days||{}; targets=j.targets||{}; rulesTxt=j.rules||''; sexRules=parseRules(rulesTxt);
+    if(document.activeElement!==$('rules')) $('rules').value=rulesTxt;
+    const ks=Object.keys(days).sort();
+    if(!ym||!ks.some(k=>k.startsWith(ym))) ym=ks.length?ks.at(-1).slice(0,7):ym;
+    $('tform').dataset.ym=''; $('login').hidden=true; loadErr='';
+  }catch(e){
+    if(e.code==='auth') showLogin(pw?"Parol noto'g'ri":''); else loadErr="Ma'lumotni olib bo'lmadi: "+(e.message||e);
+  }
+  render();
+}
+$('lform').onsubmit=e=>{e.preventDefault();pw=$('lpw').value;try{localStorage.setItem('uk_pw',pw)}catch(x){} loadAll()};
+$('logout').onclick=()=>{pw='';try{localStorage.removeItem('uk_pw')}catch(x){} role=null;days={};targets={};showLogin('');render()};
+$('reload').onclick=loadAll;
+setInterval(()=>{const a=document.activeElement;if(role&&!(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)))loadAll()},300000);
+render();
+loadAll();
+</script>
+
+</body>
+</html>
