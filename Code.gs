@@ -12,7 +12,7 @@ const VIEW_PASS = '';                              // faqat ko'rish uchun; bo'sh
 
 const SHEET_DAYS = 'Yozuvlar';
 const SHEET_SET = 'Sozlamalar';
-const HEAD = ['Sana', 'Tur', 'Model', 'Detal / joy', 'Nuqson', 'Qiymat', 'Smena', 'PONO', 'Maydon', 'Qism', 'Fayl'];
+const HEAD = ['Sana', 'Tur', 'Model', 'Detal / joy', 'Nuqson', 'Qiymat', 'Smena', 'PONO', 'Maydon', 'Qism', 'Fayl', 'Sex'];
 
 function doGet() {
   return out_({ ok: true, info: 'Xaridor Sifat Paneli API' });
@@ -84,8 +84,8 @@ function loadAll_(role) {
     const date = dateStr_(r[0]);
     const d = days[date] || (days[date] = { date: date, name: String(r[10] || ''), g: [], l: [], r: [], dl: [] });
     const type = r[1], m = String(r[2]), desc = String(r[3]), f = String(r[4]), val = Number(r[5]) || 0, sh = String(r[6] || '');
-    if (type === 'GCA') d.g.push({ m: m, a: String(r[8] || ''), p: String(r[9] || ''), d: desc, f: f, w: val, po: String(r[7] || ''), sh: sh });
-    else if (type === 'DRR') d.r.push({ m: m, d: desc, f: f, q: val, sh: sh });
+    if (type === 'GCA') d.g.push({ m: m, a: String(r[8] || ''), p: String(r[9] || ''), d: desc, f: f, w: val, po: String(r[7] || ''), sh: sh, sx: String(r[11] || '') });
+    else if (type === 'DRR') d.r.push({ m: m, d: desc, f: f, q: val, sh: sh, sx: String(r[11] || '') });
   });
   const targets = {};
   let rules = '';
@@ -108,8 +108,8 @@ function saveDays_(docs) {
     if (!doc || !/^\d{4}-\d{2}-\d{2}$/.test(doc.date)) throw new Error("Sana noto'g'ri");
     const date = doc.date, name = String(doc.name || '');
     dates[date] = true;
-    (doc.g || []).forEach(function (x) { add.push([date, 'GCA', x.m, x.d, x.f, x.w, x.sh, x.po, x.a, x.p, name]); });
-    (doc.r || []).forEach(function (x) { add.push([date, 'DRR', x.m, x.d, x.f, x.q, x.sh, '', '', '', name]); });
+    (doc.g || []).forEach(function (x) { add.push([date, 'GCA', x.m, x.d, x.f, x.w, x.sh, x.po, x.a, x.p, name, x.sx || '']); });
+    (doc.r || []).forEach(function (x) { add.push([date, 'DRR', x.m, x.d, x.f, x.q, x.sh, '', '', '', name, x.sx || '']); });
   });
   const sh = sheet_(SHEET_DAYS, HEAD);
   // mavjud qatorlar: shu kunlar va (kerak bo'lmagan) DRL / Line Stop qatorlari tashlanadi
@@ -117,6 +117,7 @@ function saveDays_(docs) {
     return !dates[dateStr_(r[0])] && (r[1] === 'GCA' || r[1] === 'DRR');
   }).map(function (r) { r[0] = dateStr_(r[0]); return r; });
   const all = keep.concat(add).sort(function (a, b) { return a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0; });
+  sh.getRange(1, 1, 1, HEAD.length).setValues([HEAD]).setFontWeight('bold');
   const oldN = sh.getLastRow() - 1;
   if (oldN > 0) sh.getRange(2, 1, oldN, HEAD.length).clearContent();
   if (all.length) {

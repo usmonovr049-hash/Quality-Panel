@@ -169,22 +169,22 @@ html{-webkit-text-size-adjust:100%}
 </section>
 
 <section class="card" style="margin-bottom:14px">
-  <h2>Quyish va Bo'yoq sexlari bo'yicha</h2><div class="hint">Muammo qaysi sexga tegishli ekani pastdagi «Sex qoidalari» asosida aniqlanadi.</div>
+  <h2>Sexlar bo'yicha</h2><div class="hint">Muammo qaysi sexga tegishli ekani hisobot faylidagi sex ustunidan olinadi (eski ma'lumot uchun «Sex qoidalari»).</div>
   <div class="tw" id="sexes"></div>
   <div class="legend" id="lgs"></div>
   <div class="g3"><div><h3>Umumiy GCA factor — sexlar kesimida</h3><div class="chart" id="sc1"></div></div><div><h3>DRR (dona) — sexlar kesimida</h3><div class="chart" id="sc2"></div></div><div><h3>GCA WDPA — sexlar kesimida</h3><div class="chart" id="sc3"></div></div></div>
 </section>
 
 <div class="grid">
-  <section class="card"><h2>GCA Top muammolar</h2><div class="hint">Nuqson turlari: Umumiy GCA factor · soni · WDPA (ball ÷ tekshirilgan avtomobillar)</div><div class="hb" id="hb1"></div></section>
-  <section class="card"><h2>GCA Top muammolar — detallar</h2><div class="hint">Umumiy GCA factor · soni · WDPA (ball ÷ tekshirilgan avtomobillar)</div><div class="hb" id="hb2"></div></section>
+  <section class="card"><h2>GCA Top muammolar</h2><div class="hint">Detal — muammo. Umumiy GCA factor · soni · WDPA (ball ÷ tekshirilgan avtomobillar)</div><div class="hb" id="hb1"></div></section>
+  <section class="card"><h2>GCA Top nuqson turlari</h2><div class="hint">Umumiy GCA factor · soni · WDPA (ball ÷ tekshirilgan avtomobillar)</div><div class="hb" id="hb2"></div></section>
   <section class="card"><h2>DRR — nuqson turlari</h2><div class="hint">Soni (QTY), tanlangan davr bo'yicha</div><div class="hb" id="hb3"></div></section>
   <section class="card"><h2>Smena bo'yicha</h2><div class="hint">Umumiy GCA factor va DRR</div><div class="tw" id="shift"></div></section>
 </div>
 
 <div class="grid">
   <section class="card"><h2>Sex qoidalari</h2>
-    <div class="hint">Har qatorga bitta qoida: <code>kalit so'z, kalit so'z = Sex nomi</code>. Kalit so'z detal, joy yoki nuqson nomida qidiriladi. Birinchi mos kelgan qoida ishlaydi.</div>
+    <div class="hint">Hisobot faylidagi sex ustuni (masalan, «2-Bo'yoqlash tsexi») avtomatik ishlatiladi. Quyidagi qoidalar faqat sex ustuni bo'lmagan eski ma'lumot uchun. Har qatorga bitta qoida: <code>kalit so'z, kalit so'z = Sex nomi</code>. Kalit so'z detal, joy yoki nuqson nomida qidiriladi. Birinchi mos kelgan qoida ishlaydi.</div>
     <textarea id="rules" rows="6" spellcheck="false" placeholder="bumper, fascia, spoiler = 2-Injection&#10;dirt, orange peel, sags = Bo'yoq"></textarea>
     <div class="filters"><button class="primary" id="rsave">Qoidalarni saqlash</button><span class="pc" id="rmsg"></span></div>
     <div class="hint" id="unas"></div>
@@ -233,9 +233,9 @@ function iso(v){
   }
   return null;
 }
-const HK={fault:'f',weight:'w','gca weight':'w',models:'models',model:'models',supplier:'sup',zone:'zone',open:'date',data:'date',date:'date',qty:'q',quantity:'q',pono:'po',shift:'sh'};
+const HK={fault:'f',weight:'w','gca weight':'w',models:'models',model:'models',supplier:'sup',zone:'zone',open:'date',data:'date',date:'date',qty:'q',quantity:'q',pono:'po',shift:'sh','факт':'fact'};
 /* sarlavha bo'lmasa: ustunlar sana ustuniga nisbatan topiladi */
-const REL={g:{f:-6,w:-5,po:1,sh:2},r:{f:-6,models:-5,q:1,sh:2}};
+const REL={g:{f:-6,w:-5,po:1,sh:2,fact:3},r:{f:-6,models:-5,q:1,sh:2,fact:3}};
 const canon=v=>{const t=String(v??'').trim();return MODELS.find(m=>m.toLowerCase()===t.toLowerCase())||t||'—'};
 const norm=v=>String(v??'').toLowerCase().replace(/[^a-z]/g,'');
 function readHeader(r){
@@ -252,17 +252,19 @@ function parseSheet(rows,ctx,sheetName){
   for(const r of rows){
     if(!r||r.every(v=>v==null||v==='')) continue;
     const filled=r.filter(v=>v!=null&&String(v).trim()!=='');
-    if(filled.length<=6&&!filled.some(v=>v instanceof Date||iso(v))){
+    const t0=typeof filled[0]==='string'?norm(filled[0]):'';
+    const sec0=MODELS.find(m=>t0===m.toLowerCase())?'m':(t0==='drr'||t0==='linestop'||t0==='linestops'||t0==='drl'||t0==='irc')?'s':null;
+    if(sec0||(filled.length<=6&&!filled.some(v=>v instanceof Date))){
       let hit=false;
-      for(const v of filled){
+      for(const v of (sec0?[filled[0]]:filled)){
         if(typeof v!=='string') continue;
         const t=norm(v);
         const mm=MODELS.find(m=>t===m.toLowerCase())||(t.length<=24?MODELS.find(m=>t.includes(m.toLowerCase())):null);
         if(mm){model=mm;sec='g';hit=true;break}
         if(t==='drr'){sec='r';hdr=null;hit=true;break}
-        if(t==='linestop'||t==='linestops'||t==='drl'){sec='skip';hdr=null;hit=true;break}
+        if(t==='linestop'||t==='linestops'||t==='drl'||t==='irc'){sec='skip';hdr=null;hit=true;break}
       }
-      if(hit||filled.length===1) continue;
+      if(hit||sec0||filled.length===1) continue;
     }
     const h=readHeader(r); if(h){hdr=h;continue}
     if(sec==='skip') continue;
@@ -273,16 +275,17 @@ function parseSheet(rows,ctx,sheetName){
       H={date:di}; for(const [k,o] of Object.entries(REL[sec])) H[k]=di+o;
     }
     const get=k=>H[k]!=null?r[H[k]]:null;
-    const firstCol=Math.min(...Object.values(H));
+    const firstCol=Math.min(...Object.values(H).filter(k=>k!==H.fact));
     const dt=iso(get('date')); if(dt)ctx.dc[dt]=(ctx.dc[dt]||0)+1;
     const desc=r.slice(0,firstCol).filter(v=>v!=null&&v!=='').join(' › '); if(!desc) continue;
     const sh=String(get('sh')||'').trim(), f=String(get('f')||'');
+    let sx=H.fact!=null?r[H.fact+1]:null; sx=typeof sx==='string'?sx.trim():''; if(sx.length<3||/^\d+$/.test(sx)||MODELS.some(m=>m.toLowerCase()===sx.toLowerCase())) sx='';
     if(sec==='g'){
       if(!get('f')&&!get('w'))continue;
       const first=r.slice(0,firstCol).filter(v=>v!=null&&v!=='');
-      ctx.out.g.push({dt,m:model||(get('models')?canon(get('models')):'—'),a:String(first[0]||''),p:String(first[1]||''),d:desc,f,w:num(get('w')),po:String(get('po')||''),sh});
+      ctx.out.g.push({dt,m:model||(get('models')?canon(get('models')):'—'),a:String(first[0]||''),p:String(first[1]||''),d:desc,f,w:num(get('w')),po:String(get('po')||''),sh,sx});
     }else{
-      ctx.out.r.push({dt,m:canon(get('models')),d:desc,f,q:num(get('q'))||1,sh});
+      ctx.out.r.push({dt,m:canon(get('models')),d:desc,f,q:num(get('q'))||1,sh,sx});
     }
   }
 }
@@ -341,7 +344,7 @@ function dayStats(d){
   return {g,gt:sum(d.g,x=>x.w),gn:d.g.length,cars:carsOf(d.g),gpa:gpa(d.g),drr:sum(d.r,x=>x.q),dm:Object.fromEntries(allM().map(m=>[m,sum(d.r.filter(x=>x.m===m),x=>x.q)]))};
 }
 function topBy(list,key){
-  const m={};list.forEach(x=>{const k=x[key]||'—';(m[k]??={k,v:0,n:0});m[k].v+=x.w;m[k].n++});
+  const m={};list.forEach(x=>{const k=key==='pf'?`${x.p||'—'} — ${x.f||'—'}`:(x[key]||'—');(m[k]??={k,v:0,n:0});m[k].v+=x.w;m[k].n++});
   return Object.values(m).sort((a,b)=>b.v-a.v).slice(0,8);
 }
 
@@ -387,13 +390,13 @@ const UN='Belgilanmagan';
 const DEFAULT_RULES="dirt, orange peel, sags, runs, drops, spray, crater, paint, off color, visible surface repair, wet damage, mutilation, chips, scratch, alteration in surface = Bo'yoq\ngap, distort, out of position, flush, offset, misalign, excessive material, sharp, touching, flash, sink, warp, short shot, parallelism = Quyish";
 let sexRules=[], rulesTxt='';
 function parseRules(txt){return txt.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{const i=l.lastIndexOf('=');if(i<1)return null;return{k:l.slice(0,i).split(',').map(x=>x.trim().toLowerCase()).filter(Boolean),s:l.slice(i+1).trim()}}).filter(x=>x&&x.k.length&&x.s)}
-function sexOf(r){const t=(r.d+' '+r.f).toLowerCase();for(const q of sexRules)if(q.k.some(k=>t.includes(k)))return q.s;return UN}
-const SXC={"Quyish":'#7a3fb5',"Bo'yoq":'#0f9fb0'};
-const sxc=n=>n===UN?'#8a94a3':SXC[n]||'#c98500';
+function sexOf(r){if(r.sx)return r.sx;const t=(r.d+' '+r.f).toLowerCase();for(const q of sexRules)if(q.k.some(k=>t.includes(k)))return q.s;return UN}
+const SXP=['#0f9fb0','#7a3fb5','#d9822b','#2a9d5c','#c24d86','#5b6ee1','#8a6d3b','#d14b4b','#3b8ea5'];
+const sxc=n=>{if(n===UN)return '#8a94a3';let h=0;for(const c of n)h=(h*31+c.charCodeAt(0))>>>0;return SXP[h%SXP.length]};
 function sexNames(docs){
-  const set=new Set(sexRules.map(q=>q.s));
-  if(docs.some(d=>[...d.g,...d.r].some(x=>sexOf(x)===UN))) set.add(UN);
-  return [...set];
+  const t={};
+  docs.forEach(d=>{d.g.forEach(x=>{const n=sexOf(x);t[n]=(t[n]||0)+x.w});d.r.forEach(x=>{const n=sexOf(x);t[n]=t[n]||0})});
+  return Object.keys(t).sort((a,b)=>(a===UN)-(b===UN)||t[b]-t[a]||a.localeCompare(b));
 }
 function renderSex(md,sc){
   const rows=allRows(sc), names=sexNames(sc), ms=MODELS;
@@ -411,6 +414,7 @@ function renderSex(md,sc){
   line('sc2',SS,(d,k)=>sum(d.r.filter(x=>sexOf(x)===k),x=>x.q),0);
   line('sc3',SS,(d,k)=>gpa(d.g.filter(x=>sexOf(x)===k)),1);
 }
+const r1=x=>Math.round(x*10)/10;
 const METRICS=[['g','Umumiy GCA factor'],['ga','GCA WDPA'],['drr','DRR']];
 function effTargets(){
   if(targets[ym]) return {t:targets[ym].v||{},from:ym};
@@ -435,7 +439,7 @@ function renderModels(md){
   const cell=(m,k,val)=>{const T=tg(m,k);
     if(T==null||!T) return `<td class="num">${val}</td>`;
     const p=val/T*100, cls=p>100?'m-bad':p>80?'m-warn':'m-ok';
-    return `<td class="num">${val} <span class="pc">/ ${T}</span><div class="meter" role="img" aria-label="${Math.round(p)}%"><i class="${cls}" style="width:${Math.min(p,100)}%"></i></div><span class="pc ${p>100?'bad':''}">${Math.round(p)}%${p>100?' · limitdan oshdi':''}</span></td>`};
+    return `<td class="num">${val} <span class="pc">/ ${T}</span><div class="meter" role="img" aria-label="${p>100?'limitdan oshgan':'limit ichida'}"><i class="${cls}" style="width:${Math.min(p,100)}%"></i></div><span class="pc ${p>100?'bad':''}">${p>100?`+${r1(val-T)} limitdan oshdi`:`${r1(T-val)} qoldi`}</span></td>`};
   $('models').innerHTML=md.length||from?`<table><thead><tr><th>Model</th><th class="num">Umumiy GCA factor</th><th class="num">GCA nuqson turlari</th><th class="num">Tekshirilgan avtomobillar</th><th class="num">GCA WDPA</th><th class="num">DRR</th></tr></thead><tbody>${rowsM.map(m=>{const a=modelAgg(md,m);
     return `<tr><td>${m==='Jami'?'<b>Jami</b>':m==='—'?'<i>Boshqa / model aniqlanmagan</i>':`<i class="dot" style="background:${mc(m)}"></i>${m}`}</td>${cell(m,'g',a.g)}<td class="num">${a.n}</td><td class="num">${a.po}</td>${cell(m,'ga',a.po?Math.round(a.g/a.po*10)/10:0)}${cell(m,'drr',a.drr)}</tr>`}).join('')}</tbody></table>${oth.g||oth.drr?`<div class="hint" style="margin-top:6px">Jami ga Onix/Cobalt/Tracker dan boshqa yoki modeli yozilmagan qatorlar ham kiradi: Umumiy GCA factor ${oth.g}, DRR ${oth.drr}.</div>`:''}`:'<div class="empty">Tanlangan davr uchun hisobot yo\'q.</div>';
 }
@@ -443,8 +447,8 @@ function renderModels(md){
 function allRows(docs){
   const out=[];
   docs.forEach(d=>{
-    d.g.forEach(x=>out.push({date:d.date,t:'GCA',m:x.m,d:x.d,f:x.f,sh:x.sh,v:x.w,u:'ball',po:x.po}));
-    d.r.forEach(x=>out.push({date:d.date,t:'DRR',m:x.m,d:x.d,f:x.f,sh:x.sh,v:x.q,u:'dona'}));
+    d.g.forEach(x=>out.push({date:d.date,t:'GCA',m:x.m,d:x.d,f:x.f,sh:x.sh,v:x.w,u:'ball',po:x.po,sx:x.sx}));
+    d.r.forEach(x=>out.push({date:d.date,t:'DRR',m:x.m,d:x.d,f:x.f,sh:x.sh,v:x.q,u:'dona',sx:x.sx}));
   });
   out.forEach(r=>r.sx=sexOf(r));
   return out.sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0);
@@ -481,8 +485,8 @@ function render(){
     line('lc2',SM,(d,k)=>gpa(ok(d,k)),1);
     line('lc3',SM,(d,k)=>sum(d.r.filter(x=>k==='__all'||x.m===k),x=>x.q),0); }
   const g=sc.flatMap(d=>d.g);
-  hbars('hb1',topBy(g,'f'),carsAll);
-  hbars('hb2',topBy(g,'p'),carsAll);
+  hbars('hb1',topBy(g,'pf'),carsAll);
+  hbars('hb2',topBy(g,'f'),carsAll);
   { const m={};sc.flatMap(d=>d.r).forEach(x=>{const k=x.f||'—';(m[k]??={k,v:0,n:0});m[k].v+=x.q;m[k].n++});hbars('hb3',Object.values(m).sort((a,b)=>b.v-a.v).slice(0,8)); }
 
   const sh=['Day','Night'].map(s=>`<tr><td>${s==='Day'?'Kunduzgi (Day)':'Tungi (Night)'}</td><td class="num">${sum(sc.flatMap(d=>d.g).filter(x=>x.sh===s),x=>x.w)}</td><td class="num">${sum(sc.flatMap(d=>d.r).filter(x=>x.sh===s),x=>x.q)}</td></tr>`).join('');
