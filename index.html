@@ -110,6 +110,7 @@ button.primary{background:var(--brand);border-color:var(--brand);color:#fff}
 .period input[type=date]{font:inherit;font-family:var(--f-mono);font-size:13px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:5px 8px;min-height:34px}
 .period .sp{width:10px}
 .g3{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+#tform table input{max-width:130px;min-height:30px;padding:4px 8px}
 .g3 h3{font-size:12.5px;margin:0 0 2px;color:var(--ink-2);font-weight:600}
 .kpi .l{color:#4a5866}
 .hb .tr i{background:var(--brand)}
@@ -146,6 +147,7 @@ html{-webkit-text-size-adjust:100%}
   <div class="msgs" id="msgs" aria-live="polite"></div>
 </div>
 <div class="banner" id="banner" hidden></div>
+<div class="banner" id="unkb" hidden style="background:#fff4e0;color:#7a4a00"></div>
 <div class="period" id="period">
   <b>Davr:</b>
   <input type="date" id="pf" aria-label="Boshlanish sanasi"> <span>–</span> <input type="date" id="pt" aria-label="Tugash sanasi">
@@ -156,29 +158,28 @@ html{-webkit-text-size-adjust:100%}
 <div class="kpis" id="kpis"></div>
 
 <section class="card" style="margin-bottom:14px">
-  <div class="th"><div><h2>Modellar bo'yicha ko'rsatkich</h2><div class="hint" id="thint"></div></div><button id="tedit">Target kiritish</button></div>
+  <div class="th"><div><h2>Modellar bo'yicha ko'rsatkich</h2><div class="hint" id="thint"></div></div><button id="tedit">Yillik target kiritish</button></div>
   <form id="tform" hidden></form>
   <div class="tw" id="models"></div>
 </section>
 
 <section class="card" style="margin-bottom:14px">
-  <h2>Kunlar bo'yicha dinamika</h2><div class="hint">Jami va modellar kesimida. Bitta kunni ko'rish uchun nuqtani bosing. Hisobot bo'lmagan kunlarda chiziq uziladi. «GCA ball / avto» = GCA ball ÷ nuqsonli avto (PONO).</div>
-  <div class="legend" id="lgm"></div>
-  <div class="g3"><div><h3>GCA ball</h3><div class="chart" id="lc1"></div></div><div><h3>GCA ball / avto</h3><div class="chart" id="lc2"></div></div><div><h3>DRR (dona)</h3><div class="chart" id="lc3"></div></div></div>
+  <h2>Kunlar bo'yicha dinamika</h2><div class="hint">Umumiy ko'rsatkichlar. Bitta kunni ko'rish uchun nuqtani bosing. Hisobot bo'lmagan kunlarda chiziq uziladi. GCA WDPA = Umumiy GCA factor ÷ tekshirilgan avtomobillar soni (PONO bo'yicha).</div>
+    <div class="g3"><div><h3>Umumiy GCA factor</h3><div class="chart" id="lc1"></div></div><div><h3>GCA WDPA</h3><div class="chart" id="lc2"></div></div><div><h3>DRR (dona)</h3><div class="chart" id="lc3"></div></div></div>
 </section>
 
 <section class="card" style="margin-bottom:14px">
   <h2>Quyish va Bo'yoq sexlari bo'yicha</h2><div class="hint">Muammo qaysi sexga tegishli ekani pastdagi «Sex qoidalari» asosida aniqlanadi.</div>
   <div class="tw" id="sexes"></div>
   <div class="legend" id="lgs"></div>
-  <div class="g3"><div><h3>GCA ball — sexlar kesimida</h3><div class="chart" id="sc1"></div></div><div><h3>DRR (dona) — sexlar kesimida</h3><div class="chart" id="sc2"></div></div><div><h3>GCA ball / avto — sexlar kesimida</h3><div class="chart" id="sc3"></div></div></div>
+  <div class="g3"><div><h3>Umumiy GCA factor — sexlar kesimida</h3><div class="chart" id="sc1"></div></div><div><h3>DRR (dona) — sexlar kesimida</h3><div class="chart" id="sc2"></div></div><div><h3>GCA WDPA — sexlar kesimida</h3><div class="chart" id="sc3"></div></div></div>
 </section>
 
 <div class="grid">
-  <section class="card"><h2>Eng ko'p ball bergan nuqson turlari</h2><div class="hint">GCA, tanlangan davr bo'yicha</div><div class="hb" id="hb1"></div></section>
-  <section class="card"><h2>Eng ko'p ball bergan detallar</h2><div class="hint">GCA, tanlangan davr bo'yicha</div><div class="hb" id="hb2"></div></section>
+  <section class="card"><h2>GCA Top muammolar</h2><div class="hint">Nuqson turlari: Umumiy GCA factor · soni · WDPA (ball ÷ tekshirilgan avtomobillar)</div><div class="hb" id="hb1"></div></section>
+  <section class="card"><h2>GCA Top muammolar — detallar</h2><div class="hint">Umumiy GCA factor · soni · WDPA (ball ÷ tekshirilgan avtomobillar)</div><div class="hb" id="hb2"></div></section>
   <section class="card"><h2>DRR — nuqson turlari</h2><div class="hint">Soni (QTY), tanlangan davr bo'yicha</div><div class="hb" id="hb3"></div></section>
-  <section class="card"><h2>Smena bo'yicha</h2><div class="hint">GCA ballari va DRR/DRL soni</div><div class="tw" id="shift"></div></section>
+  <section class="card"><h2>Smena bo'yicha</h2><div class="hint">Umumiy GCA factor va DRR</div><div class="tw" id="shift"></div></section>
 </div>
 
 <div class="grid">
@@ -245,14 +246,18 @@ function parseSheet(rows,ctx,sheetName){
   const num=v=>{const n=parseFloat(String(v).replace(',','.'));return isFinite(n)?n:0};
   for(const r of rows){
     if(!r||r.every(v=>v==null||v==='')) continue;
-    const filled=r.filter(v=>v!=null&&v!=='');
-    if(filled.length===1&&typeof filled[0]==='string'){
-      const t=norm(filled[0]);
-      const mm=MODELS.find(m=>m.toLowerCase()===t);
-      if(mm){model=mm;sec='g';hdr=null}
-      else if(t==='drr'){sec='r';hdr=null}
-      else if(t==='linestop'||t==='linestops'||t==='drl'){sec='skip';hdr=null}
-      continue;
+    const filled=r.filter(v=>v!=null&&String(v).trim()!=='');
+    if(filled.length<=3&&!filled.some(v=>v instanceof Date||iso(v))){
+      let hit=false;
+      for(const v of filled){
+        if(typeof v!=='string') continue;
+        const t=norm(v);
+        const mm=MODELS.find(m=>t===m.toLowerCase())||(t.length<=24?MODELS.find(m=>t.includes(m.toLowerCase())):null);
+        if(mm){model=mm;sec='g';hdr=null;hit=true;break}
+        if(t==='drr'){sec='r';hdr=null;hit=true;break}
+        if(t==='linestop'||t==='linestops'||t==='drl'){sec='skip';hdr=null;hit=true;break}
+      }
+      if(hit||filled.length===1) continue;
     }
     const h=readHeader(r); if(h){hdr=h;continue}
     if(sec==='skip') continue;
@@ -304,7 +309,8 @@ async function ingest(files){
       for(let i=0;i<docs.length;i+=10) await api('saveDays',{docs:docs.slice(i,i+10)});
       docs.forEach(d=>days[d.date]=d);
       const g=sum(docs,d=>d.g.length), r=sum(docs,d=>d.r.length);
-      line.className='ok'; line.textContent=`✓ ${f.name}: ${docs.length} kun (${docs[0].date} … ${docs.at(-1).date}), GCA ${g}, DRR ${r}`;
+      const unk=sum(docs,d=>d.g.filter(x=>x.m==='—').length);
+      line.className=unk?'err':'ok'; line.textContent=`${unk?'⚠':'✓'} ${f.name}: ${docs.length} kun (${docs[0].date} … ${docs.at(-1).date}), GCA ${g}, DRR ${r}`+(unk?`. ${unk} ta GCA qatorining modeli aniqlanmadi (faylda model nomi bilan sarlavha qatori topilmadi)`:'');
       ym=docs.at(-1).date.slice(0,7); selDay=null; rf=rto=null;
     }catch(e){line.className='err';line.textContent=`✗ ${f.name}: ${e.message||e}`}
     box.appendChild(line);
@@ -365,9 +371,9 @@ function line(id,series,valFn,dec){
     return t+S.map(sr=>`<div class="r"><span>${esc(sr.name)}</span><span>${f(valFn(doc,sr.key))}</span></div>`).join('')};
 }
 function legend(id,series){$(id).innerHTML=series.map(s=>`<span><i class="dot" style="background:${s.color};width:14px;height:3px;border-radius:2px;display:inline-block;vertical-align:middle"></i> ${esc(s.name)}</span>`).join('')}
-function hbars(id,list,unit){
+function hbars(id,list,cars){
   const mx=Math.max(...list.map(x=>x.v),1);
-  $(id).innerHTML=list.length?list.map(x=>`<div class="n">${esc(x.k)}</div><div class="tr"><i style="width:${x.v/mx*100}%"></i></div><div class="val">${x.v} <span style="color:var(--ink-3)">· ${x.n}</span></div>`).join(''):'<div class="empty" style="grid-column:1/-1">Ma\'lumot yo\'q</div>';
+  $(id).innerHTML=list.length?list.map(x=>`<div class="n">${esc(x.k)}</div><div class="tr"><i style="width:${x.v/mx*100}%"></i></div><div class="val">${x.v} <span style="color:var(--ink-3)">· ${x.n}${cars?` · <b style="color:var(--brand)" title="WDPA">${(x.v/cars).toFixed(2)}</b>`:''}</span></div>`).join(''):'<div class="empty" style="grid-column:1/-1">Ma\'lumot yo\'q</div>';
 }
 
 
@@ -388,7 +394,7 @@ function renderSex(md,sc){
   const A=list=>{const g=list.filter(r=>r.t==='GCA'),gt=sum(g,r=>r.v),c=new Set(g.map(r=>r.po).filter(Boolean)).size;
     return {g:gt,n:g.length,c,ga:c?(gt/c).toFixed(1):'0',drr:sum(list.filter(r=>r.t==='DRR'),r=>r.v),pm:ms.map(m=>sum(g.filter(r=>r.m===m),r=>r.v))}};
   const line_=(label,a,b)=>`<tr><td>${label}</td><td class="num">${a.g}</td><td class="num">${a.n}</td><td class="num">${a.c}</td><td class="num">${a.ga}</td><td class="num">${a.drr}</td>${a.pm.map(v=>`<td class="num">${v}</td>`).join('')}</tr>`;
-  $('sexes').innerHTML=rows.length?`<table><thead><tr><th>Sex</th><th class="num">GCA ball</th><th class="num">Nuqsonlar</th><th class="num">Nuqsonli avto</th><th class="num">GCA ball / avto</th><th class="num">DRR</th>${ms.map(m=>`<th class="num">${m} (GCA)</th>`).join('')}</tr></thead><tbody>${names.map(n=>line_(`<span class="tag${n===UN?' un':''}" style="${n===UN?'':`background:${sxc(n)};color:#fff`}">${esc(n)}</span>`,A(rows.filter(r=>r.sx===n))) ).join('')}${line_('<b>Jami</b>',A(rows))}</tbody></table>`:'<div class="empty">Ma\'lumot yo\'q</div>';
+  $('sexes').innerHTML=rows.length?`<table><thead><tr><th>Sex</th><th class="num">Umumiy GCA factor</th><th class="num">GCA nuqson turlari</th><th class="num">Tekshirilgan avtomobillar</th><th class="num">GCA WDPA</th><th class="num">DRR</th>${ms.map(m=>`<th class="num">${m} (GCA)</th>`).join('')}</tr></thead><tbody>${names.map(n=>line_(`<span class="tag${n===UN?' un':''}" style="${n===UN?'':`background:${sxc(n)};color:#fff`}">${esc(n)}</span>`,A(rows.filter(r=>r.sx===n))) ).join('')}${line_('<b>Jami</b>',A(rows))}</tbody></table>`:'<div class="empty">Ma\'lumot yo\'q</div>';
   const un={};rows.filter(r=>r.sx===UN).forEach(r=>{const k=r.f||r.d;un[k]=(un[k]||0)+1});
   const top=Object.entries(un).sort((a,b)=>b[1]-a[1]).slice(0,12);
   $('unas').textContent=top.length?`Sexi belgilanmagan nuqsonlar (tanlangan davr): ${top.map(([k,n])=>`${k} (${n})`).join(', ')}`:(rows.length?'Hamma yozuvning sexi aniqlangan.':'');
@@ -399,7 +405,7 @@ function renderSex(md,sc){
   line('sc2',SS,(d,k)=>sum(d.r.filter(x=>sexOf(x)===k),x=>x.q),0);
   line('sc3',SS,(d,k)=>gpa(d.g.filter(x=>sexOf(x)===k)),1);
 }
-const METRICS=[['g','GCA ball'],['ga','GCA / avto'],['drr','DRR']];
+const METRICS=[['g','Umumiy GCA factor'],['ga','GCA WDPA'],['drr','DRR']];
 function effTargets(){
   if(targets[ym]) return {t:targets[ym].v||{},from:ym};
   const ks=Object.keys(targets).filter(k=>k<ym).sort();
@@ -412,8 +418,8 @@ function modelAgg(docs,m){
     drr:sum(f(docs.flatMap(d=>d.r)),x=>x.q)};
 }
 function renderModels(md){
-  const {t,from}=effTargets(); const rowsM=[...allM(),'Jami'];
-  $('thint').textContent=!cmpOK?"Target (oylik limit) faqat oyning 1-sanasidan boshlanadigan, bir oy ichidagi davr uchun solishtiriladi.":from?(from===ym?'Target shu oy uchun kiritilgan. Limit sifatida o\'qiladi: kam bo\'lgani yaxshi.':`Target ${from} oyidan olingan (bu oy uchun alohida kiritilmagan).`):"Target hali kiritilmagan. «Target kiritish» tugmasi orqali oylik limitlarni yozing.";
+  const {t,from}=effTargets(); const hasUn=md.some(d=>[...d.g,...d.r].some(x=>x.m==='—')); const rowsM=[...allM(),...(hasUn?['—']:[]),'Jami'];
+  $('thint').textContent=!cmpOK?"Target (oylik limit) faqat oyning 1-sanasidan boshlanadigan, bir oy ichidagi davr uchun solishtiriladi.":from?(from===ym?'Target shu oy uchun kiritilgan. Limit sifatida o\'qiladi: kam bo\'lgani yaxshi.':`Target ${from} oyidan olingan (bu oy uchun alohida kiritilmagan).`):"Target hali kiritilmagan. «Yillik target kiritish» tugmasi orqali har oy uchun limitlarni yozing.";
   const tg=(m,k)=>{
     if(!cmpOK) return null;
     let v=t[m]?.[k]; if(v!=null&&v!=='')return Number(v);
@@ -423,14 +429,8 @@ function renderModels(md){
     if(T==null||!T) return `<td class="num">${val}</td>`;
     const p=val/T*100, cls=p>100?'m-bad':p>80?'m-warn':'m-ok';
     return `<td class="num">${val} <span class="pc">/ ${T}</span><div class="meter" role="img" aria-label="${Math.round(p)}%"><i class="${cls}" style="width:${Math.min(p,100)}%"></i></div><span class="pc ${p>100?'bad':''}">${Math.round(p)}%${p>100?' · limitdan oshdi':''}</span></td>`};
-  $('models').innerHTML=md.length||from?`<table><thead><tr><th>Model</th><th class="num">GCA ball</th><th class="num">Nuqsonlar</th><th class="num">Nuqsonli avto (PONO)</th><th class="num">GCA ball / avto</th><th class="num">DRR</th></tr></thead><tbody>${rowsM.map(m=>{const a=modelAgg(md,m);
-    return `<tr><td>${m==='Jami'?'<b>Jami</b>':`<i class="dot" style="background:${mc(m)}"></i>${m}`}</td>${cell(m,'g',a.g)}<td class="num">${a.n}</td><td class="num">${a.po}</td>${cell(m,'ga',a.po?Math.round(a.g/a.po*10)/10:0)}${cell(m,'drr',a.drr)}</tr>`}).join('')}</tbody></table>`:'<div class="empty">Tanlangan davr uchun hisobot yo\'q.</div>';
-  // form
-  const fm=$('tform'); if(fm.dataset.ym!==ym){fm.dataset.ym=ym;
-    const own=targets[ym]?.v||t;
-    fm.innerHTML=rowsM.map(m=>`<h3>${m}${m==='Jami'?' (bo\'sh qolsa, modellar yig\'indisi)':''}</h3>`+METRICS.map(([k,l])=>`<label for="t_${m}_${k}">${l}<input id="t_${m}_${k}" type="number" min="0" step="any" value="${own[m]?.[k]??''}"></label>`).join('')).join('')+`<div class="full"><button class="primary" type="submit">Saqlash</button><button type="button" id="tcancel">Bekor qilish</button><span id="tmsg" class="pc"></span></div>`;
-    $('tcancel').onclick=()=>{fm.hidden=true};
-  }
+  $('models').innerHTML=md.length||from?`<table><thead><tr><th>Model</th><th class="num">Umumiy GCA factor</th><th class="num">GCA nuqson turlari</th><th class="num">Tekshirilgan avtomobillar</th><th class="num">GCA WDPA</th><th class="num">DRR</th></tr></thead><tbody>${rowsM.map(m=>{const a=modelAgg(md,m);
+    return `<tr><td>${m==='Jami'?'<b>Jami</b>':m==='—'?'<i>Model aniqlanmagan</i>':`<i class="dot" style="background:${mc(m)}"></i>${m}`}</td>${cell(m,'g',a.g)}<td class="num">${a.n}</td><td class="num">${a.po}</td>${cell(m,'ga',a.po?Math.round(a.g/a.po*10)/10:0)}${cell(m,'drr',a.drr)}</tr>`}).join('')}</tbody></table>`:'<div class="empty">Tanlangan davr uchun hisobot yo\'q.</div>';
 }
 /* ---------- render ---------- */
 function allRows(docs){
@@ -465,22 +465,21 @@ function render(){
   const gAll=sc.flatMap(d=>d.g), carsAll=carsOf(gAll), gpaAll=carsAll?(gT/carsAll).toFixed(1):'0';
   const perA=MODELS.map(m=>`<span><i class="dot" style="background:${MC[m]}"></i>${m} ${gpa(gAll,m)}</span>`).join('');
   const K=(l,v,s)=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s||'&nbsp;'}</div></div>`;
-  $('kpis').innerHTML=K('GCA ball',gT,per)+K('GCA ball / avto',gpaAll,`${carsAll} ta nuqsonli avto · `+perA)+K('GCA nuqsonlar',gN,sc.length?`kuniga o'rtacha ${(gT/sc.length).toFixed(1)} ball`:'')+K('DRR',drr,'dona')+K('Hisobot kunlari',sc.length,selDay?'':`${md.length} / ${nDays} kun`);
+  $('kpis').innerHTML=K('Umumiy GCA factor',gT,per)+K('GCA WDPA',gpaAll,`${carsAll} ta tekshirilgan avtomobil · `+perA)+K('GCA nuqson turlari',gN,sc.length?`kuniga o'rtacha ${(gT/sc.length).toFixed(1)} ball`:'')+K('DRR',drr,'dona')+K('Hisobot kunlari',sc.length,selDay?'':`${md.length} / ${nDays} kun`);
 
 
-  { const SM=[{key:'__all',name:'Jami',color:'#262d96',w:3.5,always:true},...allM().map(m=>({key:m,name:m,color:mc(m),w:2}))];
-    legend('lgm',SM);
+  { const SM=[{key:'__all',name:'Jami',color:'#262d96',w:3,always:true}];
     const ok=(d,k)=>k==='__all'?d.g:d.g.filter(x=>x.m===k);
     line('lc1',SM,(d,k)=>sum(ok(d,k),x=>x.w),0);
     line('lc2',SM,(d,k)=>gpa(ok(d,k)),1);
     line('lc3',SM,(d,k)=>sum(d.r.filter(x=>k==='__all'||x.m===k),x=>x.q),0); }
   const g=sc.flatMap(d=>d.g);
-  hbars('hb1',topBy(g,'f'));
-  hbars('hb2',topBy(g,'p'));
+  hbars('hb1',topBy(g,'f'),carsAll);
+  hbars('hb2',topBy(g,'p'),carsAll);
   { const m={};sc.flatMap(d=>d.r).forEach(x=>{const k=x.f||'—';(m[k]??={k,v:0,n:0});m[k].v+=x.q;m[k].n++});hbars('hb3',Object.values(m).sort((a,b)=>b.v-a.v).slice(0,8)); }
 
   const sh=['Day','Night'].map(s=>`<tr><td>${s==='Day'?'Kunduzgi (Day)':'Tungi (Night)'}</td><td class="num">${sum(sc.flatMap(d=>d.g).filter(x=>x.sh===s),x=>x.w)}</td><td class="num">${sum(sc.flatMap(d=>d.r).filter(x=>x.sh===s),x=>x.q)}</td></tr>`).join('');
-  $('shift').innerHTML=`<table><thead><tr><th>Smena</th><th class="num">GCA ball</th><th class="num">DRR</th></tr></thead><tbody>${sh}</tbody></table>`;
+  $('shift').innerHTML=`<table><thead><tr><th>Smena</th><th class="num">Umumiy GCA factor</th><th class="num">DRR</th></tr></thead><tbody>${sh}</tbody></table>`;
 
   renderModels(md); renderSex(md,sc);
   { const fx=$('fx'),c0=fx.value; fx.innerHTML='<option value="all">Barcha sexlar</option>'+[...new Set(allRows(md).map(r=>r.sx))].map(x=>`<option>${esc(x)}</option>`).join(''); fx.value=[...fx.options].some(o=>o.value===c0)?c0:'all'; }
@@ -495,8 +494,11 @@ function render(){
   if($('more'))$('more').onclick=()=>{limit+=150;render()};
 
   // daily summary
-  $('daily').innerHTML=md.length?`<table><thead><tr><th>Sana</th>${MODELS.map(m=>`<th class="num">${m}</th>`).join('')}<th class="num">GCA jami</th><th class="num">GCA / avto</th><th class="num">DRR</th></tr></thead><tbody>${md.map(d=>{const s=dayStats(d);return `<tr data-d="${d.date}" tabindex="0" class="${d.date===selDay?'sel':''}"><td>${d.date.split('-').reverse().join('.')}</td>${MODELS.map(m=>`<td class="num">${s.g[m]}</td>`).join('')}<td class="num"><b>${s.gt}</b></td><td class="num">${s.gpa}</td><td class="num">${s.drr}</td></tr>`}).join('')}</tbody></table>`:'<div class="empty">Ma\'lumot yo\'q</div>';
+  $('daily').innerHTML=md.length?`<table><thead><tr><th>Sana</th>${MODELS.map(m=>`<th class="num">${m}</th>`).join('')}<th class="num">Umumiy GCA factor</th><th class="num">GCA WDPA</th><th class="num">DRR</th></tr></thead><tbody>${md.map(d=>{const s=dayStats(d);return `<tr data-d="${d.date}" tabindex="0" class="${d.date===selDay?'sel':''}"><td>${d.date.split('-').reverse().join('.')}</td>${MODELS.map(m=>`<td class="num">${s.g[m]}</td>`).join('')}<td class="num"><b>${s.gt}</b></td><td class="num">${s.gpa}</td><td class="num">${s.drr}</td></tr>`}).join('')}</tbody></table>`:'<div class="empty">Ma\'lumot yo\'q</div>';
 
+  { const un=sc.flatMap(d=>d.g.filter(x=>x.m==='—').map(()=>d.date)); const ds=[...new Set(un)];
+    $('unkb').hidden=!un.length;
+    $('unkb').textContent=un.length?`⚠ ${un.length} ta GCA qatorining modeli aniqlanmadi (${ds.map(dmy).join(', ')}). Ular faqat umumiy ko'rsatkichga kiradi, Onix/Cobalt/Tracker hisobiga kirmaydi. Shu kunlarning hisobotini qayta yuklang.`:''; }
   const ro=role!=='edit';
   ['pick','tedit','rsave'].forEach(id=>$(id).disabled=ro);
   $('drop').style.opacity=ro?.55:1;
@@ -525,15 +527,32 @@ $('tchips').onclick=e=>{const t=e.target.closest('[data-t]');if(t){tf=t.dataset.
 ['fm','fs','fx'].forEach(i=>$(i).onchange=()=>{limit=150;render()}); $('fq').oninput=()=>{limit=150;render()};
 $('daily').onclick=e=>{const r=e.target.closest('tr[data-d]');if(r)pickDay(r.dataset.d)};
 $('daily').onkeydown=e=>{if(e.key==='Enter'){const r=e.target.closest('tr[data-d]');if(r)r.click()}};
-$('tedit').onclick=()=>{const f=$('tform');f.hidden=!f.hidden};
+let tyear=null,tmodel='Jami',tdraft={};
+const mk=(y,m)=>`${y}-${String(m).padStart(2,'0')}`;
+function tInit(){tyear=tyear||+ym.slice(0,4);tdraft={};for(let m=1;m<=12;m++){const k=mk(tyear,m);tdraft[k]=JSON.parse(JSON.stringify(targets[k]?.v||{}))}}
+function renderTForm(){
+  const fm=$('tform'), msg=$('tmsg')?.textContent||'';
+  const mods=['Jami',...MODELS];
+  fm.innerHTML=`<div class="full"><label>Yil<select id="ty">${[tyear-1,tyear,tyear+1].map(y=>`<option${y===tyear?' selected':''}>${y}</option>`).join('')}</select></label><label>Model<select id="tm">${mods.map(m=>`<option${m===tmodel?' selected':''}>${m}</option>`).join('')}</select></label></div>
+  <div class="full hint">Har oy uchun limit (kam bo'lgani yaxshi). Bo'sh qoldirilgan oyda oldingi kiritilgan oyning limiti amal qiladi.${tmodel==='Jami'?" «Jami» bo'sh qolsa, Umumiy GCA factor va DRR modellar yig'indisidan olinadi.":''} Modelni almashtirsangiz, kiritilganlar yo'qolmaydi; hammasi «Yilni saqlash» bilan saqlanadi.</div>
+  <div class="full tw"><table><thead><tr><th>Oy</th>${METRICS.map(([k,l])=>`<th class="num">${l}</th>`).join('')}</tr></thead><tbody>${MN.map((n,i)=>{const k=mk(tyear,i+1),d=tdraft[k][tmodel]||{};return `<tr><td>${n}</td>${METRICS.map(([mt])=>`<td class="num"><input type="number" min="0" step="any" data-m="${k}" data-k="${mt}" value="${d[mt]??''}" aria-label="${n} ${mt}"></td>`).join('')}</tr>`}).join('')}</tbody></table></div>
+  <div class="full"><button class="primary" type="submit">Yilni saqlash</button><button type="button" id="tcancel">Yopish</button><span id="tmsg" class="pc">${esc(msg)}</span></div>`;
+  $('tcancel').onclick=()=>{fm.hidden=true};
+  $('ty').onchange=e=>{tyear=+e.target.value;tInit();renderTForm()};
+  $('tm').onchange=e=>{tmodel=e.target.value;renderTForm()};
+}
+$('tform').oninput=e=>{const i=e.target;if(!i.dataset||!i.dataset.m)return;const d=(tdraft[i.dataset.m][tmodel]??={});if(i.value==='')delete d[i.dataset.k];else d[i.dataset.k]=Number(i.value)};
+$('tedit').onclick=()=>{const f=$('tform');if(f.hidden){tyear=null;tInit();renderTForm()}f.hidden=!f.hidden};
 $('tform').onsubmit=async e=>{
-  e.preventDefault(); const v={};
-  [...MODELS,'Jami'].forEach(m=>METRICS.forEach(([k])=>{const x=$(`t_${m}_${k}`).value; if(x!==''){(v[m]??={})[k]=Number(x)}}));
-  const msg=$('tmsg');
-  targets[ym]={ym,v};
-  try{ await api('saveTargets',{ym,v}); msg.textContent='Saqlandi'; }
-  catch(err){msg.textContent="Saqlab bo'lmadi: "+(err.message||err.code||'ruxsat yo\'q')}
-  $('tform').dataset.ym=''; render(); $('tform').hidden=false;
+  e.preventDefault(); const msg=$('tmsg'); let n=0,fail=null;
+  const ch=Object.keys(tdraft).filter(k=>{const v=tdraft[k];for(const m of Object.keys(v))if(!Object.keys(v[m]).length)delete v[m];return JSON.stringify(v)!==JSON.stringify(targets[k]?.v||{})});
+  for(const k of ch){
+    msg.textContent=`Saqlanmoqda… ${n}/${ch.length}`;
+    try{await api('saveTargets',{ym:k,v:tdraft[k]});targets[k]={ym:k,v:JSON.parse(JSON.stringify(tdraft[k]))};n++}
+    catch(err){fail=err;break}
+  }
+  msg.textContent=fail?"Saqlab bo'lmadi: "+(fail.message||fail.code||"ruxsat yo'q"):(n?`Saqlandi (${n} oy)`:"O'zgarish yo'q");
+  render();
 };
 $('rsave').onclick=async()=>{
   const txt=$('rules').value; rulesTxt=txt; sexRules=parseRules(txt);
