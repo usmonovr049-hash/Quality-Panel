@@ -227,6 +227,10 @@ try{pw=localStorage.getItem('uk_pw')||''}catch(e){}
 function iso(v){
   if(v instanceof Date) return new Date(v.getTime()+12*3600e3).toISOString().slice(0,10);
   if(typeof v==='number'&&v>30000&&v<80000) return new Date(Math.round((v-25569)*86400e3)).toISOString().slice(0,10);
+  if(typeof v==='string'){
+    let m=/^\s*(\d{1,2})[./-](\d{1,2})[./-](\d{4})\s*$/.exec(v); if(m&&+m[2]<=12&&+m[1]<=31) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+    m=/^\s*(\d{4})-(\d{2})-(\d{2})/.exec(v); if(m) return `${m[1]}-${m[2]}-${m[3]}`;
+  }
   return null;
 }
 const HK={fault:'f',weight:'w','gca weight':'w',models:'models',model:'models',supplier:'sup',zone:'zone',open:'date',data:'date',date:'date',qty:'q',quantity:'q',pono:'po',shift:'sh'};
@@ -248,13 +252,13 @@ function parseSheet(rows,ctx,sheetName){
   for(const r of rows){
     if(!r||r.every(v=>v==null||v==='')) continue;
     const filled=r.filter(v=>v!=null&&String(v).trim()!=='');
-    if(filled.length<=3&&!filled.some(v=>v instanceof Date||iso(v))){
+    if(filled.length<=6&&!filled.some(v=>v instanceof Date||iso(v))){
       let hit=false;
       for(const v of filled){
         if(typeof v!=='string') continue;
         const t=norm(v);
         const mm=MODELS.find(m=>t===m.toLowerCase())||(t.length<=24?MODELS.find(m=>t.includes(m.toLowerCase())):null);
-        if(mm){model=mm;sec='g';hdr=null;hit=true;break}
+        if(mm){model=mm;sec='g';hit=true;break}
         if(t==='drr'){sec='r';hdr=null;hit=true;break}
         if(t==='linestop'||t==='linestops'||t==='drl'){sec='skip';hdr=null;hit=true;break}
       }
@@ -529,21 +533,21 @@ $('tchips').onclick=e=>{const t=e.target.closest('[data-t]');if(t){tf=t.dataset.
 ['fm','fs','fx'].forEach(i=>$(i).onchange=()=>{limit=150;render()}); $('fq').oninput=()=>{limit=150;render()};
 $('daily').onclick=e=>{const r=e.target.closest('tr[data-d]');if(r)pickDay(r.dataset.d)};
 $('daily').onkeydown=e=>{if(e.key==='Enter'){const r=e.target.closest('tr[data-d]');if(r)r.click()}};
-let tyear=null,tmodel='Jami',tdraft={};
+let tyear=null,tmetric='g',tdraft={};
 const mk=(y,m)=>`${y}-${String(m).padStart(2,'0')}`;
 function tInit(){tyear=tyear||+ym.slice(0,4);tdraft={};for(let m=1;m<=12;m++){const k=mk(tyear,m);tdraft[k]=JSON.parse(JSON.stringify(targets[k]?.v||{}))}}
 function renderTForm(){
   const fm=$('tform'), msg=$('tmsg')?.textContent||'';
   const mods=['Jami',...MODELS];
-  fm.innerHTML=`<div class="full"><label>Yil<select id="ty">${[tyear-1,tyear,tyear+1].map(y=>`<option${y===tyear?' selected':''}>${y}</option>`).join('')}</select></label><label>Model<select id="tm">${mods.map(m=>`<option${m===tmodel?' selected':''}>${m}</option>`).join('')}</select></label></div>
-  <div class="full hint">Har oy uchun limit (kam bo'lgani yaxshi). Bo'sh qoldirilgan oyda oldingi kiritilgan oyning limiti amal qiladi.${tmodel==='Jami'?" «Jami» bo'sh qolsa, Umumiy GCA factor va DRR modellar yig'indisidan olinadi.":''} Modelni almashtirsangiz, kiritilganlar yo'qolmaydi; hammasi «Yilni saqlash» bilan saqlanadi.</div>
-  <div class="full tw"><table><thead><tr><th>Oy</th>${METRICS.map(([k,l])=>`<th class="num">${l}</th>`).join('')}</tr></thead><tbody>${MN.map((n,i)=>{const k=mk(tyear,i+1),d=tdraft[k][tmodel]||{};return `<tr><td>${n}</td>${METRICS.map(([mt])=>`<td class="num"><input type="number" min="0" step="any" data-m="${k}" data-k="${mt}" value="${d[mt]??''}" aria-label="${n} ${mt}"></td>`).join('')}</tr>`}).join('')}</tbody></table></div>
+  fm.innerHTML=`<div class="full"><label>Yil<select id="ty">${[tyear-1,tyear,tyear+1].map(y=>`<option${y===tyear?' selected':''}>${y}</option>`).join('')}</select></label><div class="chips" id="tmet">${METRICS.map(([k,l])=>`<button type="button" data-k="${k}" aria-pressed="${k===tmetric}">${l}</button>`).join('')}</div></div>
+  <div class="full hint">Ko'rsatkichni tanlang va har oy uchun modellar kesimida limit kiriting (kam bo'lgani yaxshi). Qiymatni o'chirish uchun katakni bo'sh qoldiring. Bo'sh qoldirilgan oyda oldingi kiritilgan oyning limiti amal qiladi. «Jami» bo'sh qolsa, Umumiy GCA factor va DRR modellar yig'indisidan olinadi. Ko'rsatkichlar orasida o'tsangiz, kiritilganlar yo'qolmaydi; hammasi «Yilni saqlash» bilan saqlanadi.</div>
+  <div class="full tw"><table><thead><tr><th>Oy</th>${mods.map(m=>`<th class="num">${m}</th>`).join('')}</tr></thead><tbody>${MN.map((n,i)=>{const k=mk(tyear,i+1);return `<tr><td>${n}</td>${mods.map(m=>`<td class="num"><input type="number" min="0" step="any" data-m="${k}" data-md="${m}" value="${tdraft[k][m]?.[tmetric]??''}" aria-label="${n} ${m}"></td>`).join('')}</tr>`}).join('')}</tbody></table></div>
   <div class="full"><button class="primary" type="submit">Yilni saqlash</button><button type="button" id="tcancel">Yopish</button><span id="tmsg" class="pc">${esc(msg)}</span></div>`;
   $('tcancel').onclick=()=>{fm.hidden=true};
   $('ty').onchange=e=>{tyear=+e.target.value;tInit();renderTForm()};
-  $('tm').onchange=e=>{tmodel=e.target.value;renderTForm()};
+  $('tmet').onclick=e=>{const b=e.target.closest('[data-k]');if(b){tmetric=b.dataset.k;renderTForm()}};
 }
-$('tform').oninput=e=>{const i=e.target;if(!i.dataset||!i.dataset.m)return;const d=(tdraft[i.dataset.m][tmodel]??={});if(i.value==='')delete d[i.dataset.k];else d[i.dataset.k]=Number(i.value)};
+$('tform').oninput=e=>{const i=e.target;if(!i.dataset||!i.dataset.m)return;const d=(tdraft[i.dataset.m][i.dataset.md]??={});if(i.value==='')delete d[tmetric];else d[tmetric]=Number(i.value)};
 $('tedit').onclick=()=>{const f=$('tform');if(f.hidden){tyear=null;tInit();renderTForm()}f.hidden=!f.hidden};
 $('tform').onsubmit=async e=>{
   e.preventDefault(); const msg=$('tmsg'); let n=0,fail=null;
