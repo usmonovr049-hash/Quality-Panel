@@ -315,7 +315,8 @@ async function ingest(files){
       docs.forEach(d=>days[d.date]=d);
       const g=sum(docs,d=>d.g.length), r=sum(docs,d=>d.r.length);
       const unk=sum(docs,d=>d.g.filter(x=>x.m==='—').length);
-      line.className=unk?'err':'ok'; line.textContent=`${unk?'⚠':'✓'} ${f.name}: ${docs.length} kun (${docs[0].date} … ${docs.at(-1).date}), GCA ${g}, DRR ${r}`+(unk?`. ${unk} ta GCA qatorining modeli aniqlanmadi (faylda model nomi bilan sarlavha qatori topilmadi)`:'');
+      const noG=docs.length&&!g;
+      line.className=(unk||noG)?'err':'ok'; line.textContent=`${unk?'⚠':'✓'} ${f.name}: ${docs.length} kun (${docs[0].date} … ${docs.at(-1).date}), GCA ${g}, DRR ${r}`+(unk?`. ${unk} ta GCA qatorining modeli aniqlanmadi (faylda model nomi bilan sarlavha qatori topilmadi)`:'')+(noG?". Diqqat: GCA qatori topilmadi. Hisobotda GCA nuqsoni yo'qmi yoki fayl formati boshqacha, tekshiring":'');
       ym=docs.at(-1).date.slice(0,7); selDay=null; rf=rto=null;
     }catch(e){line.className='err';line.textContent=`✗ ${f.name}: ${e.message||e}`}
     box.appendChild(line);
