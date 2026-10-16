@@ -215,7 +215,8 @@ html{-webkit-text-size-adjust:100%}
 const MODELS=['Onix','Cobalt','Tracker'];
 const MC={Onix:'var(--c-onix)',Cobalt:'var(--c-cobalt)',Tracker:'var(--c-tracker)'};
 const mc=m=>MC[m]||'var(--c-ls)';
-const allM=()=>[...MODELS,...[...new Set(Object.values(days).flatMap(d=>[...d.g,...d.r].map(x=>x.m)))].filter(m=>m&&m!=='—'&&!MODELS.includes(m)).sort()];
+const allM=()=>MODELS;
+const isOth=x=>!MODELS.includes(x.m);
 const MN=['Yanvar','Fevral','Mart','Aprel','May','Iyun','Iyul','Avgust','Sentyabr','Oktyabr','Noyabr','Dekabr'];
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -412,13 +413,14 @@ function effTargets(){
   return ks.length?{t:targets[ks.at(-1)].v||{},from:ks.at(-1)}:{t:{},from:null};
 }
 function modelAgg(docs,m){
-  const gs=docs.flatMap(d=>d.g).filter(x=>m==='Jami'||x.m===m);
-  const f=(arr,k)=>arr.filter(x=>m==='Jami'||x.m===m);
+  const pick=x=>m==='Jami'||(m==='—'?isOth(x):x.m===m);
+  const gs=docs.flatMap(d=>d.g).filter(pick);
+  const f=arr=>arr.filter(pick);
   return {g:sum(gs,x=>x.w),n:gs.length,po:new Set(gs.map(x=>x.po).filter(Boolean)).size,
     drr:sum(f(docs.flatMap(d=>d.r)),x=>x.q)};
 }
 function renderModels(md){
-  const {t,from}=effTargets(); const hasUn=md.some(d=>[...d.g,...d.r].some(x=>x.m==='—')); const rowsM=[...allM(),...(hasUn?['—']:[]),'Jami'];
+  const {t,from}=effTargets(); const oth=modelAgg(md,'—'); const rowsM=[...allM(),'Jami'];
   $('thint').textContent=!cmpOK?"Target (oylik limit) faqat oyning 1-sanasidan boshlanadigan, bir oy ichidagi davr uchun solishtiriladi.":from?(from===ym?'Target shu oy uchun kiritilgan. Limit sifatida o\'qiladi: kam bo\'lgani yaxshi.':`Target ${from} oyidan olingan (bu oy uchun alohida kiritilmagan).`):"Target hali kiritilmagan. «Yillik target kiritish» tugmasi orqali har oy uchun limitlarni yozing.";
   const tg=(m,k)=>{
     if(!cmpOK) return null;
@@ -430,7 +432,7 @@ function renderModels(md){
     const p=val/T*100, cls=p>100?'m-bad':p>80?'m-warn':'m-ok';
     return `<td class="num">${val} <span class="pc">/ ${T}</span><div class="meter" role="img" aria-label="${Math.round(p)}%"><i class="${cls}" style="width:${Math.min(p,100)}%"></i></div><span class="pc ${p>100?'bad':''}">${Math.round(p)}%${p>100?' · limitdan oshdi':''}</span></td>`};
   $('models').innerHTML=md.length||from?`<table><thead><tr><th>Model</th><th class="num">Umumiy GCA factor</th><th class="num">GCA nuqson turlari</th><th class="num">Tekshirilgan avtomobillar</th><th class="num">GCA WDPA</th><th class="num">DRR</th></tr></thead><tbody>${rowsM.map(m=>{const a=modelAgg(md,m);
-    return `<tr><td>${m==='Jami'?'<b>Jami</b>':m==='—'?'<i>Model aniqlanmagan</i>':`<i class="dot" style="background:${mc(m)}"></i>${m}`}</td>${cell(m,'g',a.g)}<td class="num">${a.n}</td><td class="num">${a.po}</td>${cell(m,'ga',a.po?Math.round(a.g/a.po*10)/10:0)}${cell(m,'drr',a.drr)}</tr>`}).join('')}</tbody></table>`:'<div class="empty">Tanlangan davr uchun hisobot yo\'q.</div>';
+    return `<tr><td>${m==='Jami'?'<b>Jami</b>':m==='—'?'<i>Boshqa / model aniqlanmagan</i>':`<i class="dot" style="background:${mc(m)}"></i>${m}`}</td>${cell(m,'g',a.g)}<td class="num">${a.n}</td><td class="num">${a.po}</td>${cell(m,'ga',a.po?Math.round(a.g/a.po*10)/10:0)}${cell(m,'drr',a.drr)}</tr>`}).join('')}</tbody></table>${oth.g||oth.drr?`<div class="hint" style="margin-top:6px">Jami ga Onix/Cobalt/Tracker dan boshqa yoki modeli yozilmagan qatorlar ham kiradi: Umumiy GCA factor ${oth.g}, DRR ${oth.drr}.</div>`:''}`:'<div class="empty">Tanlangan davr uchun hisobot yo\'q.</div>';
 }
 /* ---------- render ---------- */
 function allRows(docs){
