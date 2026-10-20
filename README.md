@@ -37,11 +37,15 @@ Parol faqat Google'dagi kodda turadi, GitHub'ga tushmaydi.
 2. Kelgan `Daily_report_kk.oo.yyyy.xlsx` faylini «Hisobot yuklash» maydoniga tashlang.
 3. Yashil «✓» chiqsa tayyor. Ma'lumot Google jadvalning «Yozuvlar» varag'iga ham yoziladi, uni jadvalda ham ko'rish va tahrirlash mumkin.
 
+Hisobot fayli modellarga (Onix, Cobalt, Tracker) va DRR bo'limlariga bo'lingan holda keladi. Sex nomi har qatorning **P ustunidan** olinadi (kalit so'z qoidalari yo'q). P ustuni bo'sh eski kunlarda sex «belgilanmagan» bo'ladi, ularni yangi fayl bilan qayta yuklash mumkin.
+
+Targetlar yillik, oyma-oy va model kesimida kiritiladi (Target bo'limi). Limitdan oshish foizda emas, son bilan ko'rsatiladi.
+
 Bir sanaga ikkinchi marta yuklansa, o'sha kunning eski ma'lumoti almashadi. Faylni yuklab bo'lgach, boshqa odamlar sahifada «Yangilash»ni bosib yangi ma'lumotni ko'radi (sahifa 5 daqiqada o'zi ham yangilanadi).
 
 ## Parol va ruxsatlar
 
-- `EDIT_PASS` bilan kirgan odam yuklay oladi, target va sex qoidalarini o'zgartira oladi.
+- `EDIT_PASS` bilan kirgan odam yuklay oladi, targetlarni o'zgartira oladi.
 - `VIEW_PASS` bilan (yoki u bo'sh bo'lsa, parolsiz) faqat ko'rish mumkin.
 - Parolni o'zgartirsangiz, Apps Script'da **Deploy → Manage deployments → Edit → New version → Deploy** qiling.
 - Kodni o'zgartirganda ham shunday: yangi versiyani deploy qilmasangiz, eski kod ishlayveradi.
