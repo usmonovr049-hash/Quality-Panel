@@ -182,14 +182,7 @@ html{-webkit-text-size-adjust:100%}
   <section class="card"><h2>Smena bo'yicha</h2><div class="hint">Umumiy GCA factor va DRR</div><div class="tw" id="shift"></div></section>
 </div>
 
-<div class="grid">
-  <section class="card"><h2>Sex qoidalari</h2>
-    <div class="hint">Hisobot faylidagi sex ustuni (masalan, «2-Bo'yoqlash tsexi») avtomatik ishlatiladi. Quyidagi qoidalar faqat sex ustuni bo'lmagan eski ma'lumot uchun. Har qatorga bitta qoida: <code>kalit so'z, kalit so'z = Sex nomi</code>. Kalit so'z detal, joy yoki nuqson nomida qidiriladi. Birinchi mos kelgan qoida ishlaydi.</div>
-    <textarea id="rules" rows="6" spellcheck="false" placeholder="bumper, fascia, spoiler = 2-Injection&#10;dirt, orange peel, sags = Bo'yoq"></textarea>
-    <div class="filters"><button class="primary" id="rsave">Qoidalarni saqlash</button><span class="pc" id="rmsg"></span></div>
-    <div class="hint" id="unas"></div>
-  </section>
-</div>
+
 
 <section class="card" style="margin-bottom:14px">
   <h2>Barcha yozuvlar</h2>
@@ -279,7 +272,7 @@ function parseSheet(rows,ctx,sheetName){
     const dt=iso(get('date')); if(dt)ctx.dc[dt]=(ctx.dc[dt]||0)+1;
     const desc=r.slice(0,firstCol).filter(v=>v!=null&&v!=='').join(' › '); if(!desc) continue;
     const sh=String(get('sh')||'').trim(), f=String(get('f')||'');
-    let sx=H.fact!=null?r[H.fact+1]:null; sx=typeof sx==='string'?sx.trim():''; if(sx.length<3||/^\d+$/.test(sx)||MODELS.some(m=>m.toLowerCase()===sx.toLowerCase())) sx='';
+    let sx=r[15]!=null&&r[15]!==''?r[15]:(H.fact!=null?r[H.fact+1]:null); sx=typeof sx==='string'?sx.trim():''; if(sx.length<3||/^\d+$/.test(sx)||MODELS.some(m=>m.toLowerCase()===sx.toLowerCase())) sx='';
     if(sec==='g'){
       if(!get('f')&&!get('w'))continue;
       const first=r.slice(0,firstCol).filter(v=>v!=null&&v!=='');
@@ -387,10 +380,7 @@ function hbars(id,list,cars){
 
 
 const UN='Belgilanmagan';
-const DEFAULT_RULES="dirt, orange peel, sags, runs, drops, spray, crater, paint, off color, visible surface repair, wet damage, mutilation, chips, scratch, alteration in surface = Bo'yoq\ngap, distort, out of position, flush, offset, misalign, excessive material, sharp, touching, flash, sink, warp, short shot, parallelism = Quyish";
-let sexRules=[], rulesTxt='';
-function parseRules(txt){return txt.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{const i=l.lastIndexOf('=');if(i<1)return null;return{k:l.slice(0,i).split(',').map(x=>x.trim().toLowerCase()).filter(Boolean),s:l.slice(i+1).trim()}}).filter(x=>x&&x.k.length&&x.s)}
-function sexOf(r){if(r.sx)return r.sx;const t=(r.d+' '+r.f).toLowerCase();for(const q of sexRules)if(q.k.some(k=>t.includes(k)))return q.s;return UN}
+function sexOf(r){return r.sx||UN}
 const SXP=['#0f9fb0','#7a3fb5','#d9822b','#2a9d5c','#c24d86','#5b6ee1','#8a6d3b','#d14b4b','#3b8ea5'];
 const sxc=n=>{if(n===UN)return '#8a94a3';let h=0;for(const c of n)h=(h*31+c.charCodeAt(0))>>>0;return SXP[h%SXP.length]};
 function sexNames(docs){
@@ -404,9 +394,6 @@ function renderSex(md,sc){
     return {g:gt,n:g.length,c,ga:c?(gt/c).toFixed(1):'0',drr:sum(list.filter(r=>r.t==='DRR'),r=>r.v),pm:ms.map(m=>sum(g.filter(r=>r.m===m),r=>r.v))}};
   const line_=(label,a,b)=>`<tr><td>${label}</td><td class="num">${a.g}</td><td class="num">${a.n}</td><td class="num">${a.c}</td><td class="num">${a.ga}</td><td class="num">${a.drr}</td>${a.pm.map(v=>`<td class="num">${v}</td>`).join('')}</tr>`;
   $('sexes').innerHTML=rows.length?`<table><thead><tr><th>Sex</th><th class="num">Umumiy GCA factor</th><th class="num">GCA nuqson turlari</th><th class="num">Tekshirilgan avtomobillar</th><th class="num">GCA WDPA</th><th class="num">DRR</th>${ms.map(m=>`<th class="num">${m} (GCA)</th>`).join('')}</tr></thead><tbody>${names.map(n=>line_(`<span class="tag${n===UN?' un':''}" style="${n===UN?'':`background:${sxc(n)};color:#fff`}">${esc(n)}</span>`,A(rows.filter(r=>r.sx===n))) ).join('')}${line_('<b>Jami</b>',A(rows))}</tbody></table>`:'<div class="empty">Ma\'lumot yo\'q</div>';
-  const un={};rows.filter(r=>r.sx===UN).forEach(r=>{const k=r.f||r.d;un[k]=(un[k]||0)+1});
-  const top=Object.entries(un).sort((a,b)=>b[1]-a[1]).slice(0,12);
-  $('unas').textContent=top.length?`Sexi belgilanmagan nuqsonlar (tanlangan davr): ${top.map(([k,n])=>`${k} (${n})`).join(', ')}`:(rows.length?'Hamma yozuvning sexi aniqlangan.':'');
   const SS=names.map(n=>({key:n,name:n,color:sxc(n),w:2.5,always:n!==UN}));
   legend('lgs',SS);
   const gs=(d,k)=>sum(d.g.filter(x=>sexOf(x)===k),x=>x.w);
@@ -511,7 +498,7 @@ function render(){
     $('unkb').hidden=!un.length;
     $('unkb').textContent=un.length?`⚠ ${un.length} ta GCA qatorining modeli aniqlanmadi (${ds.map(dmy).join(', ')}). Ular faqat umumiy ko'rsatkichga kiradi, Onix/Cobalt/Tracker hisobiga kirmaydi. Shu kunlarning hisobotini qayta yuklang.`:''; }
   const ro=role!=='edit';
-  ['pick','tedit','rsave'].forEach(id=>$(id).disabled=ro);
+  ['pick','tedit'].forEach(id=>$(id).disabled=ro);
   $('drop').style.opacity=ro?.55:1;
   $('banner').hidden=!(loadErr||(role&&ro));
   $('banner').textContent=loadErr||"Faqat ko'rish rejimi: ma'lumot yuklash va o'zgartirish uchun tahrirlash parolini kiriting (Chiqish → qayta kiring).";
@@ -565,12 +552,6 @@ $('tform').onsubmit=async e=>{
   msg.textContent=fail?"Saqlab bo'lmadi: "+(fail.message||fail.code||"ruxsat yo'q"):(n?`Saqlandi (${n} oy)`:"O'zgarish yo'q");
   render();
 };
-$('rsave').onclick=async()=>{
-  const txt=$('rules').value; rulesTxt=txt; sexRules=parseRules(txt);
-  try{ await api('saveRules',{txt}); $('rmsg').textContent=`Saqlandi (${sexRules.length} qoida)`; }
-  catch(err){$('rmsg').textContent="Saqlab bo'lmadi: "+(err.message||err.code||'')}
-  render();
-};
 const tip=$('tip');
 document.addEventListener('mousemove',e=>{
   const t=e.target.closest&&e.target.closest('rect[data-d]');
@@ -595,8 +576,7 @@ function showLogin(msg){$('login').hidden=false;$('lerr').textContent=msg||'';se
 async function loadAll(){
   try{
     const j=await api('load');
-    role=j.role; days=j.days||{}; targets=j.targets||{}; rulesTxt=(j.rules||'').trim()?j.rules:DEFAULT_RULES; sexRules=parseRules(rulesTxt);
-    if(document.activeElement!==$('rules')) $('rules').value=rulesTxt;
+    role=j.role; days=j.days||{}; targets=j.targets||{};
     const ks=Object.keys(days).sort();
     if(!ym||!ks.some(k=>k.startsWith(ym))) ym=ks.length?ks.at(-1).slice(0,7):ym;
     $('tform').dataset.ym=''; $('login').hidden=true; loadErr='';
