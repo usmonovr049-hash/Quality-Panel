@@ -474,7 +474,7 @@ function render(){
   const g=sc.flatMap(d=>d.g);
   hbars('hb1',topBy(g,'pf'),carsAll);
   hbars('hb2',topBy(g,'f'),carsAll);
-  { const m={};sc.flatMap(d=>d.r).forEach(x=>{const k=x.f||'—';(m[k]??={k,v:0,n:0});m[k].v+=x.q;m[k].n++});hbars('hb3',Object.values(m).sort((a,b)=>b.v-a.v).slice(0,8)); }
+  {const m={};sc.flatMap(d=>d.r).forEach(x=>{const model=x.m||'Model aniqlanmagan';const defect=x.f||'—';const k=`${model} — ${defect}`;(m[k]??={k,v:0,n:0});m[k].v+=x.q;m[k].n++});hbars('hb3',Object.values(m).sort((a,b)=>b.v-a.v).slice(0,8));}
 
   const sh=['Day','Night'].map(s=>`<tr><td>${s==='Day'?'Kunduzgi (Day)':'Tungi (Night)'}</td><td class="num">${sum(sc.flatMap(d=>d.g).filter(x=>x.sh===s),x=>x.w)}</td><td class="num">${sum(sc.flatMap(d=>d.r).filter(x=>x.sh===s),x=>x.q)}</td></tr>`).join('');
   $('shift').innerHTML=`<table><thead><tr><th>Smena</th><th class="num">Umumiy GCA factor</th><th class="num">DRR</th></tr></thead><tbody>${sh}</tbody></table>`;
