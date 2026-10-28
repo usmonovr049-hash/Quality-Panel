@@ -177,7 +177,7 @@ html{-webkit-text-size-adjust:100%}
 <div class="grid">
   <section class="card"><h2>GCA Top muammolar</h2><div class="hint">Detal — muammo. Umumiy GCA factor · soni · WDPA (ball ÷ tekshirilgan avtomobillar)</div><div class="hb" id="hb1"></div></section>
   <section class="card"><h2>GCA Top nuqson turlari</h2><div class="hint">Umumiy GCA factor · soni · WDPA (ball ÷ tekshirilgan avtomobillar)</div><div class="hb" id="hb2"></div></section>
-  <section class="card"><h2>DRR — nuqson turlari</h2><div class="hint">Soni (QTY), tanlangan davr bo'yicha</div><div class="hb" id="hb3"></div></section>
+  <section class="card"><h2>DRR Top muammolar</h2><div class="hint">Model — detal — nuqson. Soni (QTY) · yozuvlar soni</div><div class="hb" id="hb3"></div></section>
   <section class="card"><h2>Smena bo'yicha</h2><div class="hint">Umumiy GCA factor va DRR</div><div class="tw" id="shift"></div></section>
 </div>
 
@@ -487,7 +487,21 @@ function render(){
   const g=sc.flatMap(d=>d.g);
   hbars('hb1',topBy(g,'pf'),carsAll);
   hbars('hb2',topBy(g,'f'),carsAll);
-  { const m={};sc.flatMap(d=>d.r).forEach(x=>{const k=x.f||'—';(m[k]??={k,v:0,n:0});m[k].v+=x.q;m[k].n++});hbars('hb3',Object.values(m).sort((a,b)=>b.v-a.v).slice(0,8)); }
+
+  // DRR Top muammolar: Model + Detal + Nuqson ko'rsatiladi
+  { 
+    const m={};
+    sc.flatMap(d=>d.r).forEach(x=>{
+      const model=x.m&&x.m!=='—'?`[${x.m}] `:'';
+      const part=x.d?`${x.d} — `:'';
+      const fault=x.f||'—';
+      const k=`${model}${part}${fault}`;
+      (m[k]??={k,v:0,n:0});
+      m[k].v+=x.q;
+      m[k].n++;
+    });
+    hbars('hb3',Object.values(m).sort((a,b)=>b.v-a.v).slice(0,8)); 
+  }
 
   const sh=['Day','Night'].map(s=>`<tr><td>${s==='Day'?'Kunduzgi (Day)':'Tungi (Night)'}</td><td class="num">${sum(sc.flatMap(d=>d.g).filter(x=>x.sh===s),x=>x.w)}</td><td class="num">${sum(sc.flatMap(d=>d.r).filter(x=>x.sh===s),x=>x.q)}</td></tr>`).join('');
   if($('shift')) $('shift').innerHTML=`<table><thead><tr><th>Smena</th><th class="num">Umumiy GCA factor</th><th class="num">DRR</th></tr></thead><tbody>${sh}</tbody></table>`;
@@ -617,7 +631,6 @@ $('logout').onclick=()=>{pw='';try{localStorage.removeItem('uk_pw')}catch(x){} r
 $('reload').onclick=loadAll;
 setInterval(()=>{const a=document.activeElement;if(role&&!(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)))loadAll()},300000);
 
-// Ishga tushirish
 document.addEventListener('DOMContentLoaded', () => {
   render();
   loadAll();
