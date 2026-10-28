@@ -126,7 +126,6 @@ html{-webkit-text-size-adjust:100%}
 </head>
 <body>
 
-
 <div class="wrap">
 <header>
   <div>
@@ -165,7 +164,7 @@ html{-webkit-text-size-adjust:100%}
 
 <section class="card" style="margin-bottom:14px">
   <h2>Kunlar bo'yicha dinamika</h2><div class="hint">Umumiy ko'rsatkichlar. Bitta kunni ko'rish uchun nuqtani bosing. Hisobot bo'lmagan kunlarda chiziq uziladi. GCA WDPA = Umumiy GCA factor ÷ tekshirilgan avtomobillar soni (PONO bo'yicha).</div>
-    <div class="g3"><div><h3>Umumiy GCA factor</h3><div class="chart" id="lc1"></div></div><div><h3>GCA WDPA</h3><div class="chart" id="lc2"></div></div><div><h3>DRR (dona)</h3><div class="chart" id="lc3"></div></div></div>
+  <div class="g3"><div><h3>Umumiy GCA factor</h3><div class="chart" id="lc1"></div></div><div><h3>GCA WDPA</h3><div class="chart" id="lc2"></div></div><div><h3>DRR (dona)</h3><div class="chart" id="lc3"></div></div></div>
 </section>
 
 <section class="card" style="margin-bottom:14px">
@@ -181,8 +180,6 @@ html{-webkit-text-size-adjust:100%}
   <section class="card"><h2>DRR — nuqson turlari</h2><div class="hint">Soni (QTY), tanlangan davr bo'yicha</div><div class="hb" id="hb3"></div></section>
   <section class="card"><h2>Smena bo'yicha</h2><div class="hint">Umumiy GCA factor va DRR</div><div class="tw" id="shift"></div></section>
 </div>
-
-
 
 <section class="card" style="margin-bottom:14px">
   <h2>Barcha yozuvlar</h2>
@@ -201,6 +198,7 @@ html{-webkit-text-size-adjust:100%}
   <div class="tw" id="daily"></div>
 </section>
 </div>
+
 <div id="tip"></div>
 <div id="login" class="login" hidden><form id="lform"><h2>Xaridor Sifat Paneli</h2><label for="lpw">Parol</label><input type="password" id="lpw" autocomplete="current-password"><button class="primary" type="submit">Kirish</button><div id="lerr" class="pc bad" role="alert"></div></form></div>
 
@@ -227,7 +225,6 @@ function iso(v){
   return null;
 }
 const HK={fault:'f',weight:'w','gca weight':'w',models:'models',model:'models',supplier:'sup',zone:'zone',open:'date',data:'date',date:'date',qty:'q',quantity:'q',pono:'po',shift:'sh','факт':'fact'};
-/* sarlavha bo'lmasa: ustunlar sana ustuniga nisbatan topiladi */
 const REL={g:{f:-6,w:-5,po:1,sh:2,fact:3},r:{f:-6,models:-5,q:1,sh:2,fact:3}};
 const canon=v=>{const t=String(v??'').trim();return MODELS.find(m=>m.toLowerCase()===t.toLowerCase())||t||'—'};
 const norm=v=>String(v??'').toLowerCase().replace(/[^a-z]/g,'');
@@ -344,7 +341,9 @@ function topBy(list,key){
 /* ---------- charts ---------- */
 function step(max){for(let k=0;k<7;k++)for(const m of[1,2,5]){const s=m*10**k;if(max/s<=4)return s}return 1}
 function line(id,series,valFn,dec){
-  const el=$(id), rg=range(), dates=[];
+  const el=$(id);
+  if(!el) return;
+  const rg=range(), dates=[];
   for(let t=new Date(rg.from+'T00:00:00Z'),e=new Date(rg.to+'T00:00:00Z');t<=e&&dates.length<400;t=new Date(t.getTime()+864e5))dates.push(t.toISOString().slice(0,10));
   const n=dates.length, multi=rg.from.slice(0,7)!==rg.to.slice(0,7);
   const vals=series.map(sr=>dates.map(d=>days[d]?valFn(days[d],sr.key):null));
@@ -372,12 +371,17 @@ function line(id,series,valFn,dec){
     if(!doc) return t+'<div>Hisobot yo\'q</div>';
     return t+S.map(sr=>`<div class="r"><span>${esc(sr.name)}</span><span>${f(valFn(doc,sr.key))}</span></div>`).join('')};
 }
-function legend(id,series){$(id).innerHTML=series.map(s=>`<span><i class="dot" style="background:${s.color};width:14px;height:3px;border-radius:2px;display:inline-block;vertical-align:middle"></i> ${esc(s.name)}</span>`).join('')}
-function hbars(id,list,cars){
-  const mx=Math.max(...list.map(x=>x.v),1);
-  $(id).innerHTML=list.length?list.map(x=>`<div class="n">${esc(x.k)}</div><div class="tr"><i style="width:${x.v/mx*100}%"></i></div><div class="val">${x.v} <span style="color:var(--ink-3)">· ${x.n}${cars?` · <b style="color:var(--brand)" title="WDPA">${(x.v/cars).toFixed(2)}</b>`:''}</span></div>`).join(''):'<div class="empty" style="grid-column:1/-1">Ma\'lumot yo\'q</div>';
+function legend(id,series){
+  const el=$(id);
+  if(!el) return;
+  el.innerHTML=series.map(s=>`<span><i class="dot" style="background:${s.color};width:14px;height:3px;border-radius:2px;display:inline-block;vertical-align:middle"></i> ${esc(s.name)}</span>`).join('');
 }
-
+function hbars(id,list,cars){
+  const el=$(id);
+  if(!el) return;
+  const mx=Math.max(...list.map(x=>x.v),1);
+  el.innerHTML=list.length?list.map(x=>`<div class="n">${esc(x.k)}</div><div class="tr"><i style="width:${x.v/mx*100}%"></i></div><div class="val">${x.v} <span style="color:var(--ink-3)">· ${x.n}${cars?` · <b style="color:var(--brand)" title="WDPA">${(x.v/cars).toFixed(2)}</b>`:''}</span></div>`).join(''):'<div class="empty" style="grid-column:1/-1">Ma\'lumot yo\'q</div>';
+}
 
 const UN='Belgilanmagan';
 function sexOf(r){return r.sx||UN}
@@ -389,11 +393,13 @@ function sexNames(docs){
   return Object.keys(t).sort((a,b)=>(a===UN)-(b===UN)||t[b]-t[a]||a.localeCompare(b));
 }
 function renderSex(md,sc){
+  const el=$('sexes');
+  if(!el) return;
   const rows=allRows(sc), names=sexNames(sc), ms=MODELS;
   const A=list=>{const g=list.filter(r=>r.t==='GCA'),gt=sum(g,r=>r.v),c=new Set(g.map(r=>r.po).filter(Boolean)).size;
     return {g:gt,n:g.length,c,ga:c?(gt/c).toFixed(1):'0',drr:sum(list.filter(r=>r.t==='DRR'),r=>r.v),pm:ms.map(m=>sum(g.filter(r=>r.m===m),r=>r.v))}};
   const line_=(label,a,b)=>`<tr><td>${label}</td><td class="num">${a.g}</td><td class="num">${a.n}</td><td class="num">${a.c}</td><td class="num">${a.ga}</td><td class="num">${a.drr}</td>${a.pm.map(v=>`<td class="num">${v}</td>`).join('')}</tr>`;
-  $('sexes').innerHTML=rows.length?`<table><thead><tr><th>Sex</th><th class="num">Umumiy GCA factor</th><th class="num">GCA nuqson turlari</th><th class="num">Tekshirilgan avtomobillar</th><th class="num">GCA WDPA</th><th class="num">DRR</th>${ms.map(m=>`<th class="num">${m} (GCA)</th>`).join('')}</tr></thead><tbody>${names.map(n=>line_(`<span class="tag${n===UN?' un':''}" style="${n===UN?'':`background:${sxc(n)};color:#fff`}">${esc(n)}</span>`,A(rows.filter(r=>r.sx===n))) ).join('')}${line_('<b>Jami</b>',A(rows))}</tbody></table>`:'<div class="empty">Ma\'lumot yo\'q</div>';
+  el.innerHTML=rows.length?`<table><thead><tr><th>Sex</th><th class="num">Umumiy GCA factor</th><th class="num">GCA nuqson turlari</th><th class="num">Tekshirilgan avtomobillar</th><th class="num">GCA WDPA</th><th class="num">DRR</th>${ms.map(m=>`<th class="num">${m} (GCA)</th>`).join('')}</tr></thead><tbody>${names.map(n=>line_(`<span class="tag${n===UN?' un':''}" style="${n===UN?'':`background:${sxc(n)};color:#fff`}">${esc(n)}</span>`,A(rows.filter(r=>r.sx===n))) ).join('')}${line_('<b>Jami</b>',A(rows))}</tbody></table>`:'<div class="empty">Ma\'lumot yo\'q</div>';
   const SS=names.map(n=>({key:n,name:n,color:sxc(n),w:2.5,always:n!==UN}));
   legend('lgs',SS);
   const gs=(d,k)=>sum(d.g.filter(x=>sexOf(x)===k),x=>x.w);
@@ -416,6 +422,8 @@ function modelAgg(docs,m){
     drr:sum(f(docs.flatMap(d=>d.r)),x=>x.q)};
 }
 function renderModels(md){
+  const el=$('models');
+  if(!el) return;
   const {t,from}=effTargets(); const oth=modelAgg(md,'—'); const rowsM=[...allM(),'Jami'];
   $('thint').textContent=!cmpOK?"Target (oylik limit) faqat oyning 1-sanasidan boshlanadigan, bir oy ichidagi davr uchun solishtiriladi.":from?(from===ym?'Target shu oy uchun kiritilgan. Limit sifatida o\'qiladi: kam bo\'lgani yaxshi.':`Target ${from} oyidan olingan (bu oy uchun alohida kiritilmagan).`):"Target hali kiritilmagan. «Yillik target kiritish» tugmasi orqali har oy uchun limitlarni yozing.";
   const tg=(m,k)=>{
@@ -427,9 +435,10 @@ function renderModels(md){
     if(T==null||!T) return `<td class="num">${val}</td>`;
     const p=val/T*100, cls=p>100?'m-bad':p>80?'m-warn':'m-ok';
     return `<td class="num">${val} <span class="pc">/ ${T}</span><div class="meter" role="img" aria-label="${p>100?'limitdan oshgan':'limit ichida'}"><i class="${cls}" style="width:${Math.min(p,100)}%"></i></div><span class="pc ${p>100?'bad':''}">${p>100?`+${r1(val-T)} limitdan oshdi`:`${r1(T-val)} qoldi`}</span></td>`};
-  $('models').innerHTML=md.length||from?`<table><thead><tr><th>Model</th><th class="num">Umumiy GCA factor</th><th class="num">GCA nuqson turlari</th><th class="num">Tekshirilgan avtomobillar</th><th class="num">GCA WDPA</th><th class="num">DRR</th></tr></thead><tbody>${rowsM.map(m=>{const a=modelAgg(md,m);
+  el.innerHTML=md.length||from?`<table><thead><tr><th>Model</th><th class="num">Umumiy GCA factor</th><th class="num">GCA nuqson turlari</th><th class="num">Tekshirilgan avtomobillar</th><th class="num">GCA WDPA</th><th class="num">DRR</th></tr></thead><tbody>${rowsM.map(m=>{const a=modelAgg(md,m);
     return `<tr><td>${m==='Jami'?'<b>Jami</b>':m==='—'?'<i>Boshqa / model aniqlanmagan</i>':`<i class="dot" style="background:${mc(m)}"></i>${m}`}</td>${cell(m,'g',a.g)}<td class="num">${a.n}</td><td class="num">${a.po}</td>${cell(m,'ga',a.po?Math.round(a.g/a.po*10)/10:0)}${cell(m,'drr',a.drr)}</tr>`}).join('')}</tbody></table>${oth.g||oth.drr?`<div class="hint" style="margin-top:6px">Jami ga Onix/Cobalt/Tracker dan boshqa yoki modeli yozilmagan qatorlar ham kiradi: Umumiy GCA factor ${oth.g}, DRR ${oth.drr}.</div>`:''}`:'<div class="empty">Tanlangan davr uchun hisobot yo\'q.</div>';
 }
+
 /* ---------- render ---------- */
 function allRows(docs){
   const out=[];
@@ -448,23 +457,27 @@ function render(){
   const [y,mo]=ym.split('-').map(Number);
   selDay=custom&&rg.from===rg.to?rg.from:null;
   cmpOK=rg.from.slice(0,7)===rg.to.slice(0,7)&&rg.from.endsWith('-01');
-  $('mlabel').textContent=custom?'Tanlangan davr':`${MN[mo-1]} ${y}`;
+  if($('mlabel')) $('mlabel').textContent=custom?'Tanlangan davr':`${MN[mo-1]} ${y}`;
   const minM=keys[0]?.slice(0,7)||ym, maxM=keys.at(-1)?.slice(0,7)||ym;
-  $('prev').disabled=!custom&&ym<=minM; $('next').disabled=!custom&&ym>=maxM;
-  $('pf').value=rg.from; $('pt').value=rg.to;
-  if(keys.length){$('pf').min=$('pt').min=keys[0];$('pf').max=$('pt').max=keys.at(-1)}
+  if($('prev')) $('prev').disabled=!custom&&ym<=minM; 
+  if($('next')) $('next').disabled=!custom&&ym>=maxM;
+  if($('pf')) $('pf').value=rg.from; 
+  if($('pt')) $('pt').value=rg.to;
+  if(keys.length){
+    if($('pf')) { $('pf').min=keys[0]; $('pf').max=keys.at(-1); }
+    if($('pt')) { $('pt').min=keys[0]; $('pt').max=keys.at(-1); }
+  }
   const md=monthDocs(), sc=md, st=sc.map(dayStats);
   const nDays=Math.round((new Date(rg.to)-new Date(rg.from))/864e5)+1;
-  $('seld').innerHTML=custom?`<span class="pill">Davr: ${dmy(rg.from)}${rg.from===rg.to?'':' – '+dmy(rg.to)}<button id="clr">Oyga qaytish</button></span>`:'';
-  if($('clr'))$('clr').onclick=()=>{rf=rto=null;render()};
+  if($('seld')) $('seld').innerHTML=custom?`<span class="pill">Davr: ${dmy(rg.from)}${rg.from===rg.to?'':' – '+dmy(rg.to)}<button id="clr">Oyga qaytish</button></span>`:'';
+  if($('clr')) $('clr').onclick=()=>{rf=rto=null;render()};
 
   const gT=sum(st,s=>s.gt), gN=sum(st,s=>s.gn), drr=sum(st,s=>s.drr);
   const per=MODELS.map(m=>`<span><i class="dot" style="background:${MC[m]}"></i>${m} ${sum(st,s=>s.g[m])}</span>`).join('');
   const gAll=sc.flatMap(d=>d.g), carsAll=carsOf(gAll), gpaAll=carsAll?(gT/carsAll).toFixed(1):'0';
   const perA=MODELS.map(m=>`<span><i class="dot" style="background:${MC[m]}"></i>${m} ${gpa(gAll,m)}</span>`).join('');
   const K=(l,v,s)=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s||'&nbsp;'}</div></div>`;
-  $('kpis').innerHTML=K('Umumiy GCA factor',gT,per)+K('GCA WDPA',gpaAll,`${carsAll} ta tekshirilgan avtomobil · `+perA)+K('GCA nuqson turlari',gN,sc.length?`kuniga o'rtacha ${(gT/sc.length).toFixed(1)} ball`:'')+K('DRR',drr,'dona')+K('Hisobot kunlari',sc.length,selDay?'':`${md.length} / ${nDays} kun`);
-
+  if($('kpis')) $('kpis').innerHTML=K('Umumiy GCA factor',gT,per)+K('GCA WDPA',gpaAll,`${carsAll} ta tekshirilgan avtomobil · `+perA)+K('GCA nuqson turlari',gN,sc.length?`kuniga o'rtacha ${(gT/sc.length).toFixed(1)} ball`:'')+K('DRR',drr,'dona')+K('Hisobot kunlari',sc.length,selDay?'':`${md.length} / ${nDays} kun`);
 
   { const SM=[{key:'__all',name:'Jami',color:'#262d96',w:3,always:true}];
     const ok=(d,k)=>k==='__all'?d.g:d.g.filter(x=>x.m===k);
@@ -477,31 +490,37 @@ function render(){
   { const m={};sc.flatMap(d=>d.r).forEach(x=>{const k=x.f||'—';(m[k]??={k,v:0,n:0});m[k].v+=x.q;m[k].n++});hbars('hb3',Object.values(m).sort((a,b)=>b.v-a.v).slice(0,8)); }
 
   const sh=['Day','Night'].map(s=>`<tr><td>${s==='Day'?'Kunduzgi (Day)':'Tungi (Night)'}</td><td class="num">${sum(sc.flatMap(d=>d.g).filter(x=>x.sh===s),x=>x.w)}</td><td class="num">${sum(sc.flatMap(d=>d.r).filter(x=>x.sh===s),x=>x.q)}</td></tr>`).join('');
-  $('shift').innerHTML=`<table><thead><tr><th>Smena</th><th class="num">Umumiy GCA factor</th><th class="num">DRR</th></tr></thead><tbody>${sh}</tbody></table>`;
+  if($('shift')) $('shift').innerHTML=`<table><thead><tr><th>Smena</th><th class="num">Umumiy GCA factor</th><th class="num">DRR</th></tr></thead><tbody>${sh}</tbody></table>`;
 
   renderModels(md); renderSex(md,sc);
-  { const fx=$('fx'),c0=fx.value; fx.innerHTML='<option value="all">Barcha sexlar</option>'+[...new Set(allRows(md).map(r=>r.sx))].map(x=>`<option>${esc(x)}</option>`).join(''); fx.value=[...fx.options].some(o=>o.value===c0)?c0:'all'; }
+  { const fx=$('fx'); if(fx){ const c0=fx.value; fx.innerHTML='<option value="all">Barcha sexlar</option>'+[...new Set(allRows(md).map(r=>r.sx))].map(x=>`<option>${esc(x)}</option>`).join(''); fx.value=[...fx.options].some(o=>o.value===c0)?c0:'all'; } }
+  
   // records table
   const types=['all','GCA','DRR'];
-  $('tchips').innerHTML=types.map(t=>`<button data-t="${t}" aria-pressed="${tf===t}">${t==='all'?'Hammasi':t}</button>`).join('');
-  const fm=$('fm'), cur=fm.value; fm.innerHTML='<option value="all">Barcha modellar</option>'+[...new Set(allRows(md).map(r=>r.m))].map(m=>`<option>${esc(m)}</option>`).join(''); fm.value=[...fm.options].some(o=>o.value===cur)?cur:'all';
-  const q=$('fq').value.trim().toLowerCase();
-  let rows=allRows(sc).filter(r=>(tf==='all'||r.t===tf)&&(fm.value==='all'||r.m===fm.value)&&($('fx').value==='all'||r.sx===$('fx').value)&&($('fs').value==='all'||r.sh===$('fs').value)&&(!q||(r.d+' '+r.f+' '+(r.po||'')).toLowerCase().includes(q)));
+  if($('tchips')) $('tchips').innerHTML=types.map(t=>`<button data-t="${t}" aria-pressed="${tf===t}">${t==='all'?'Hammasi':t}</button>`).join('');
+  const fm=$('fm'); if(fm){ const cur=fm.value; fm.innerHTML='<option value="all">Barcha modellar</option>'+[...new Set(allRows(md).map(r=>r.m))].map(m=>`<option>${esc(m)}</option>`).join(''); fm.value=[...fm.options].some(o=>o.value===cur)?cur:'all'; }
+  const q=$('fq')?.value.trim().toLowerCase()||'';
+  let rows=allRows(sc).filter(r=>(tf==='all'||r.t===tf)&&(!$('fm')||$('fm').value==='all'||r.m===$('fm').value)&&(!$('fx')||$('fx').value==='all'||r.sx===$('fx').value)&&(!$('fs')||$('fs').value==='all'||r.sh===$('fs').value)&&(!q||(r.d+' '+r.f+' '+(r.po||'')).toLowerCase().includes(q)));
   const shown=rows.slice(0,limit);
-  $('rows').innerHTML=rows.length?`<table><thead><tr><th>Sana</th><th>Tur</th><th>Model</th><th>Detal / joy</th><th>Nuqson</th><th>PONO</th><th>Sex</th><th>Smena</th><th class="num">Qiymat</th></tr></thead><tbody>${shown.map(r=>`<tr><td style="white-space:nowrap">${r.date.slice(5).split('-').reverse().join('.')}</td><td><span class="tag">${r.t}</span></td><td>${esc(r.m)}</td><td>${esc(r.d)}</td><td>${esc(r.f)}</td><td>${esc(r.po||'')}</td><td><span class="tag${r.sx===UN?' un':''}">${esc(r.sx)}</span></td><td>${esc(r.sh)}</td><td class="num">${r.v} <span style="color:var(--ink-3)">${r.u}</span></td></tr>`).join('')}</tbody></table>${rows.length>limit?`<div style="padding:10px"><button id="more">Yana ko'rsatish (${rows.length-limit})</button></div>`:''}`:`<div class="empty">${md.length?'Filtrga mos yozuv topilmadi.':'Tanlangan davr uchun hisobot yo\'q. Kunlik Excel faylni yuklang.'}</div>`;
-  if($('more'))$('more').onclick=()=>{limit+=150;render()};
+  if($('rows')) $('rows').innerHTML=rows.length?`<table><thead><tr><th>Sana</th><th>Tur</th><th>Model</th><th>Detal / joy</th><th>Nuqson</th><th>PONO</th><th>Sex</th><th>Smena</th><th class="num">Qiymat</th></tr></thead><tbody>${shown.map(r=>`<tr><td style="white-space:nowrap">${r.date.slice(5).split('-').reverse().join('.')}</td><td><span class="tag">${r.t}</span></td><td>${esc(r.m)}</td><td>${esc(r.d)}</td><td>${esc(r.f)}</td><td>${esc(r.po||'')}</td><td><span class="tag${r.sx===UN?' un':''}">${esc(r.sx)}</span></td><td>${esc(r.sh)}</td><td class="num">${r.v} <span style="color:var(--ink-3)">${r.u}</span></td></tr>`).join('')}</tbody></table>${rows.length>limit?`<div style="padding:10px"><button id="more">Yana ko'rsatish (${rows.length-limit})</button></div>`:''}`:`<div class="empty">${md.length?'Filtrga mos yozuv topilmadi.':'Tanlangan davr uchun hisobot yo\'q. Kunlik Excel faylni yuklang.'}</div>`;
+  if($('more')) $('more').onclick=()=>{limit+=150;render()};
 
   // daily summary
-  $('daily').innerHTML=md.length?`<table><thead><tr><th>Sana</th>${MODELS.map(m=>`<th class="num">${m}</th>`).join('')}<th class="num">Umumiy GCA factor</th><th class="num">GCA WDPA</th><th class="num">DRR</th></tr></thead><tbody>${md.map(d=>{const s=dayStats(d);return `<tr data-d="${d.date}" tabindex="0" class="${d.date===selDay?'sel':''}"><td>${d.date.split('-').reverse().join('.')}</td>${MODELS.map(m=>`<td class="num">${s.g[m]}</td>`).join('')}<td class="num"><b>${s.gt}</b></td><td class="num">${s.gpa}</td><td class="num">${s.drr}</td></tr>`}).join('')}</tbody></table>`:'<div class="empty">Ma\'lumot yo\'q</div>';
+  if($('daily')) $('daily').innerHTML=md.length?`<table><thead><tr><th>Sana</th>${MODELS.map(m=>`<th class="num">${m}</th>`).join('')}<th class="num">Umumiy GCA factor</th><th class="num">GCA WDPA</th><th class="num">DRR</th></tr></thead><tbody>${md.map(d=>{const s=dayStats(d);return `<tr data-d="${d.date}" tabindex="0" class="${d.date===selDay?'sel':''}"><td>${d.date.split('-').reverse().join('.')}</td>${MODELS.map(m=>`<td class="num">${s.g[m]}</td>`).join('')}<td class="num"><b>${s.gt}</b></td><td class="num">${s.gpa}</td><td class="num">${s.drr}</td></tr>`}).join('')}</tbody></table>`:'<div class="empty">Ma\'lumot yo\'q</div>';
 
   { const un=sc.flatMap(d=>d.g.filter(x=>x.m==='—').map(()=>d.date)); const ds=[...new Set(un)];
-    $('unkb').hidden=!un.length;
-    $('unkb').textContent=un.length?`⚠ ${un.length} ta GCA qatorining modeli aniqlanmadi (${ds.map(dmy).join(', ')}). Ular faqat umumiy ko'rsatkichga kiradi, Onix/Cobalt/Tracker hisobiga kirmaydi. Shu kunlarning hisobotini qayta yuklang.`:''; }
+    if($('unkb')) {
+      $('unkb').hidden=!un.length;
+      $('unkb').textContent=un.length?`⚠ ${un.length} ta GCA qatorining modeli aniqlanmadi (${ds.map(dmy).join(', ')}). Ular faqat umumiy ko'rsatkichga kiradi, Onix/Cobalt/Tracker hisobiga kirmaydi. Shu kunlarning hisobotini qayta yuklang.`:'';
+    }
+  }
   const ro=role!=='edit';
-  ['pick','tedit'].forEach(id=>$(id).disabled=ro);
-  $('drop').style.opacity=ro?.55:1;
-  $('banner').hidden=!(loadErr||(role&&ro));
-  $('banner').textContent=loadErr||"Faqat ko'rish rejimi: ma'lumot yuklash va o'zgartirish uchun tahrirlash parolini kiriting (Chiqish → qayta kiring).";
+  ['pick','tedit'].forEach(id=>{ if($(id)) $(id).disabled=ro; });
+  if($('drop')) $('drop').style.opacity=ro?.55:1;
+  if($('banner')) {
+    $('banner').hidden=!(loadErr||(role&&ro));
+    $('banner').textContent=loadErr||"Faqat ko'rish rejimi: ma'lumot yuklash va o'zgartirish uchun tahrirlash parolini kiriting (Chiqish → qayta kiring).";
+  }
 }
 
 /* ---------- events ---------- */
@@ -522,14 +541,17 @@ $('p7').onclick=()=>{const k=dkeys();if(!k.length)return;const e=new Date(k.at(-
 $('pall').onclick=()=>{const k=dkeys();if(k.length)setRange(k[0],k.at(-1))};
 $('prev').onclick=()=>shiftMonth(-1); $('next').onclick=()=>shiftMonth(1);
 $('tchips').onclick=e=>{const t=e.target.closest('[data-t]');if(t){tf=t.dataset.t;limit=150;render()}};
-['fm','fs','fx'].forEach(i=>$(i).onchange=()=>{limit=150;render()}); $('fq').oninput=()=>{limit=150;render()};
+['fm','fs','fx'].forEach(i=>{ if($(i)) $(i).onchange=()=>{limit=150;render()}; }); 
+if($('fq')) $('fq').oninput=()=>{limit=150;render()};
 $('daily').onclick=e=>{const r=e.target.closest('tr[data-d]');if(r)pickDay(r.dataset.d)};
 $('daily').onkeydown=e=>{if(e.key==='Enter'){const r=e.target.closest('tr[data-d]');if(r)r.click()}};
+
 let tyear=null,tmetric='g',tdraft={};
 const mk=(y,m)=>`${y}-${String(m).padStart(2,'0')}`;
 function tInit(){tyear=tyear||+ym.slice(0,4);tdraft={};for(let m=1;m<=12;m++){const k=mk(tyear,m);tdraft[k]=JSON.parse(JSON.stringify(targets[k]?.v||{}))}}
 function renderTForm(){
   const fm=$('tform'), msg=$('tmsg')?.textContent||'';
+  if(!fm) return;
   const mods=['Jami',...MODELS];
   fm.innerHTML=`<div class="full"><label>Yil<select id="ty">${[tyear-1,tyear,tyear+1].map(y=>`<option${y===tyear?' selected':''}>${y}</option>`).join('')}</select></label><div class="chips" id="tmet">${METRICS.map(([k,l])=>`<button type="button" data-k="${k}" aria-pressed="${k===tmetric}">${l}</button>`).join('')}</div></div>
   <div class="full hint">Ko'rsatkichni tanlang va har oy uchun modellar kesimida limit kiriting (kam bo'lgani yaxshi). Qiymatni o'chirish uchun katakni bo'sh qoldiring. Bo'sh qoldirilgan oyda oldingi kiritilgan oyning limiti amal qiladi. «Jami» bo'sh qolsa, Umumiy GCA factor va DRR modellar yig'indisidan olinadi. Ko'rsatkichlar orasida o'tsangiz, kiritilganlar yo'qolmaydi; hammasi «Yilni saqlash» bilan saqlanadi.</div>
@@ -545,19 +567,22 @@ $('tform').onsubmit=async e=>{
   e.preventDefault(); const msg=$('tmsg'); let n=0,fail=null;
   const ch=Object.keys(tdraft).filter(k=>{const v=tdraft[k];for(const m of Object.keys(v))if(!Object.keys(v[m]).length)delete v[m];return JSON.stringify(v)!==JSON.stringify(targets[k]?.v||{})});
   for(const k of ch){
-    msg.textContent=`Saqlanmoqda… ${n}/${ch.length}`;
+    if(msg) msg.textContent=`Saqlanmoqda… ${n}/${ch.length}`;
     try{await api('saveTargets',{ym:k,v:tdraft[k]});targets[k]={ym:k,v:JSON.parse(JSON.stringify(tdraft[k]))};n++}
     catch(err){fail=err;break}
   }
-  msg.textContent=fail?"Saqlab bo'lmadi: "+(fail.message||fail.code||"ruxsat yo'q"):(n?`Saqlandi (${n} oy)`:"O'zgarish yo'q");
+  if(msg) msg.textContent=fail?"Saqlab bo'lmadi: "+(fail.message||fail.code||"ruxsat yo'q"):(n?`Saqlandi (${n} oy)`:"O'zgarish yo'q");
   render();
 };
 const tip=$('tip');
 document.addEventListener('mousemove',e=>{
   const t=e.target.closest&&e.target.closest('rect[data-d]');
-  if(!t){tip.style.display='none';return}
-  tip.innerHTML=$(t.dataset.c)._info(t.dataset.d); tip.style.display='block';
-  const w=tip.offsetWidth; tip.style.left=Math.min(e.clientX+14,innerWidth-w-8)+'px'; tip.style.top=(e.clientY+14)+'px';
+  if(!t||!tip){if(tip) tip.style.display='none';return}
+  const chartEl=$(t.dataset.c);
+  if(chartEl&&chartEl._info){
+    tip.innerHTML=chartEl._info(t.dataset.d); tip.style.display='block';
+    const w=tip.offsetWidth; tip.style.left=Math.min(e.clientX+14,innerWidth-w-8)+'px'; tip.style.top=(e.clientY+14)+'px';
+  }
 });
 document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('rect[data-d]');
   if(t&&days[t.dataset.d])pickDay(t.dataset.d)});
@@ -579,7 +604,9 @@ async function loadAll(){
     role=j.role; days=j.days||{}; targets=j.targets||{};
     const ks=Object.keys(days).sort();
     if(!ym||!ks.some(k=>k.startsWith(ym))) ym=ks.length?ks.at(-1).slice(0,7):ym;
-    $('tform').dataset.ym=''; $('login').hidden=true; loadErr='';
+    if($('tform')) $('tform').dataset.ym=''; 
+    if($('login')) $('login').hidden=true; 
+    loadErr='';
   }catch(e){
     if(e.code==='auth') showLogin(pw?"Parol noto'g'ri":''); else loadErr="Ma'lumotni olib bo'lmadi: "+(e.message||e);
   }
@@ -589,8 +616,12 @@ $('lform').onsubmit=e=>{e.preventDefault();pw=$('lpw').value;try{localStorage.se
 $('logout').onclick=()=>{pw='';try{localStorage.removeItem('uk_pw')}catch(x){} role=null;days={};targets={};showLogin('');render()};
 $('reload').onclick=loadAll;
 setInterval(()=>{const a=document.activeElement;if(role&&!(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)))loadAll()},300000);
-render();
-loadAll();
+
+// Ishga tushirish
+document.addEventListener('DOMContentLoaded', () => {
+  render();
+  loadAll();
+});
 </script>
 
 </body>
